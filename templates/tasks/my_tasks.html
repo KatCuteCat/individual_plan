@@ -1,0 +1,223 @@
+{% extends 'base.html' %}
+
+{% block title %}Мои задачи{% endblock %}
+
+{% block page_header %}
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+    <div>
+        <h4 class="mb-0">
+            <i class="bi bi-list-task me-2"></i>Мои задачи
+        </h4>
+        {% if active_year %}
+            <span class="text-muted small">Учебный год: {{ active_year.name }}</span>
+        {% endif %}
+    </div>
+    {# Кнопка «Создать задачу» — только для активного года и не-почасовой позиции #}
+    {% if filter_position and not filter_position.is_hourly %}
+    <a href="{% url 'tasks:my_task_create' %}" class="btn btn-primary btn-sm">
+        <i class="bi bi-plus-circle me-1"></i>Создать задачу
+    </a>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block content %}
+
+{% if not active_year %}
+<div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle me-2"></i>
+    Нет активного учебного года. Обратитесь к администратору.
+</div>
+{% else %}
+
+{# === Фильтр по статусу === #}
+<div class="card shadow-sm mb-4">
+    <div class="card-body py-2">
+        <form method="get" class="d-flex align-items-center gap-3 flex-wrap">
+            <label class="small fw-semibold text-nowrap mb-0">Статус:</label>
+            <select name="status" class="form-select form-select-sm" style="max-width: 180px;"
+                    onchange="this.form.submit()">
+                <option value="">— Все статусы —</option>
+                {% for value, label in status_choices %}
+                    <option value="{{ value }}"
+                        {% if current_status == value %}selected{% endif %}>
+                        {{ label }}
+                    </option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
+</div>
+
+{# === Таблица задач === #}
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        {% if tasks %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Задача</th>
+                        <th>Категория</th>
+                        <th class="text-center">Часы</th>
+                        <th>Срок</th>
+                        <th>Статус</th>
+                        <th class="text-end">Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for task in tasks %}
+                    <tr class="{% if task.end_date < today and task.status != 'approved' and task.status != 'completed' %}table-danger{% endif %}">{# Название + вид работы (14.7) #}
+                        <td>
+                            <div class="fw-semibold">{{ task.title }}</div>
+                            {% if task.work_type %}
+                                <div class="text-muted small">
+                                    <i class="bi bi-tag me-1"></i>{{ task.work_type.name }}
+                                </div>
+                            {% endif %}
+                            {% if task.description %}
+                                <div class="text-muted small">{{ task.description|truncatewords:12 }}</div>
+                            {% endif %}
+                        </td>
+
+                        {# Категория #}
+                        <td class="small text-muted">{{ task.category.name }}</td>
+
+                        {# Часы #}
+                        <td class="text-center small text-nowrap">
+                            {% include 'tasks/_task_hours_cell.html' with task=task %}
+                        </td>
+
+                        {# Срок #}
+                        <td class="small text-nowrap
+                            {% if task.end_date < today and task.status != 'approved' and task.status != 'completed' %}text-danger fw-bold{% endif %}">
+                            {{ task.end_date|date:"d.m.Y" }}
+                            {% if task.end_date < today and task.status != 'approved' and task.status != 'completed' %}
+                                <i class="bi bi-exclamation-triangle"></i>
+                            {% endif %}
+                        </td>
+
+                        {# Статус #}
+                        <td>
+                            {% if task.status == 'pending_approval' %}
+                                <span class="badge bg-warning text-dark">
+                                    <i class="bi bi-hourglass-split me-1"></i>Ожидает утверждения
+                                </span>
+                            {% elif task.status == 'assigned' %}
+                                <span class="badge bg-secondary">Назначена</span>
+                            {% elif task.status == 'in_progress' %}
+                                <span class="badge bg-info text-dark">В работе</span>
+                            {% elif task.status == 'completed' %}
+                                <span class="badge bg-warning text-dark">На проверке</span>
+                            {% elif task.status == 'approved' %}
+                                <span class="badge bg-success">Подтверждена</span>
+                            {% elif task.status == 'declined' %}
+                                <span class="badge bg-dark">Не утверждена</span>
+                            {% endif %}
+                        </td>
+
+                        {# Действия #}
+                        <td class="text-end text-nowrap">
+                            {% if task.status == 'pending_approval' %}
+                                {# Внеплановая задача, ждёт утверждения — можно редактировать #}
+                                <a href="{% url 'tasks:my_task_edit' task.pk %}"
+                                   class="btn btn-sm btn-outline-primary py-0 px-2"
+                                   title="Изменить">
+                                    <i class="bi bi-pencil me-1"></i>Изменить
+                                </a>
+
+                            {% elif task.status == 'assigned' %}
+                                {# Взять в работу #}
+                                <form method="post" action="{% url 'tasks:task_start' task.pk %}"
+                                      class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-primary py-0 px-2"
+                                            title="Взять в работу">
+                                        <i class="bi bi-play-fill me-1"></i>В работу
+                                    </button>
+                                </form>
+
+                            {% elif task.status == 'in_progress' %}
+                                {# Отметить выполнение #}
+                                <a href="{% url 'tasks:task_complete' task.pk %}"
+                                   class="btn btn-sm btn-warning py-0 px-2"
+                                   title="Отметить выполнение">
+                                    <i class="bi bi-check-lg me-1"></i>Выполнить
+                                </a>
+
+                            {% elif task.status == 'completed' %}
+                                <form method="post" action="{% url 'tasks:task_withdraw' task.pk %}" style="display:inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-warning py-0 px-2"
+                                            onclick="return confirm('Отозвать задачу «{{ task.title }}» на редактирование? Введённые часы и описание сохранятся.')">
+                                        <i class="bi bi-arrow-counterclockwise me-1"></i>Отозвать
+                                    </button>
+                                </form>
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-info py-0 px-2 ms-1"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#reportModal-{{ task.pk }}"
+                                        title="Отчёт">
+                                    <i class="bi bi-file-text"></i>
+                                </button>
+
+                            {% elif task.status == 'approved' %}
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-success py-0 px-2"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#reportModal-{{ task.pk }}"
+                                        title="Отчёт">
+                                    <i class="bi bi-file-text"></i>
+                                </button>
+
+                            {% elif task.status == 'declined' %}
+                                {# Внеплановая задача, отклонённая заведующим — показываем причину #}
+                                {% if task.rejection_reason %}
+                                    <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2"
+                                            data-bs-toggle="popover" data-bs-trigger="focus"
+                                            data-bs-placement="left"
+                                            title="Причина отклонения"
+                                            data-bs-content="{{ task.rejection_reason }}">
+                                        <i class="bi bi-info-circle"></i>
+                                    </button>
+                                {% else %}
+                                    <span class="text-muted small">—</span>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% for task in tasks %}
+            {% if task.status == 'completed' or task.status == 'approved' %}
+                {% include 'tasks/_task_report_modal.html' with task=task %}
+            {% endif %}
+        {% endfor %}
+        {% else %}
+        <div class="text-center text-muted py-4">
+            <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+            Задач нет{% if current_status %} с выбранным статусом{% endif %}.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Инициализация Bootstrap Popover для кнопок с причиной отклонения и результатом
+    document.addEventListener('DOMContentLoaded', function() {
+        var popoverTriggerList = [].slice.call(
+            document.querySelectorAll('[data-bs-toggle="popover"]')
+        );
+        popoverTriggerList.map(function(el) {
+            return new bootstrap.Popover(el);
+        });
+    });
+</script>
+{% endblock %}

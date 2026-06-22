@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block title %}Выполнение задачи{% endblock %}
+
+{% block page_header %}
+<h4 class="mb-0">
+    <i class="bi bi-check-circle me-2"></i>Отметить выполнение
+</h4>
+{% endblock %}
+
+{% block content %}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+
+        {# Информация о задаче #}
+        <div class="card shadow-sm mb-4">
+            <div class="card-header fw-semibold">
+                {{ task.title }}
+            </div>
+            <div class="card-body">
+                {% if task.description %}
+                    <p class="text-muted">{{ task.description }}</p>
+                {% endif %}
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <div class="small text-muted">Категория</div>
+                        <div>{{ task.category.name }}</div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="small text-muted">Плановые часы</div>
+                        <div>{{ task.planned_hours|floatformat:0 }} ч.</div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="small text-muted">Дата начала</div>
+                        <div>{{ task.start_date|date:"d.m.Y" }}</div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="small text-muted">Дата окончания</div>
+                        <div>{{ task.end_date|date:"d.m.Y" }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Форма завершения #}
+        <div class="card shadow-sm">
+            <div class="card-header fw-semibold">
+                Данные о выполнении
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label for="actual_hours" class="form-label">
+                            Фактические часы <span class="text-danger">*</span>
+                        </label>
+                        <input type="number" class="form-control" id="actual_hours"
+                               name="actual_hours" step="0.5" min="0.5"
+                               value="{{ entered_hours|default:task.actual_hours|default:'' }}"
+                               placeholder="Сколько часов фактически потрачено"
+                               required>
+                        <div class="form-text">
+                            Плановые часы: {{ task.planned_hours|floatformat:0 }} ч.
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="result" class="form-label">
+                            Результат <span class="text-danger">*</span>
+                        </label>
+                        <textarea class="form-control" id="result" name="result"
+                                  rows="3"
+                                  required
+                                  placeholder="Например: название статьи, ссылка на публикацию, описание результата">{{ entered_result|default:task.result|default:'' }}</textarea>
+                        <div class="form-text">
+                            Этот текст войдёт в итоговый отчёт Word. Опишите конкретный
+                            результат: рег. номер патента, название статьи с выходными
+                            данными, ссылка на публикацию и т. п.
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'tasks:my_tasks' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i>Назад
+                        </a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-lg me-1"></i>Отправить на проверку
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}

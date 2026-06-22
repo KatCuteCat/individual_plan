@@ -1,0 +1,318 @@
+{% extends 'base.html' %}
+
+{% block title %}Утверждение задач{% endblock %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="h3 mb-0">
+            {% if is_declined_view %}
+                Не утверждённые задачи
+            {% else %}
+                Утверждение задач
+            {% endif %}
+        </h1>
+        {% if active_year %}
+            <span class="text-muted small">Учебный год: {{ active_year.name }}</span>
+        {% endif %}
+    </div>
+    <a href="{% url 'tasks:head_dashboard' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>На дашборд
+    </a>
+</div>
+
+{# === Переключатель режимов: «Ожидают» / «Не утверждены» === #}
+<ul class="nav nav-pills mb-3">
+    <li class="nav-item">
+        <a class="nav-link {% if is_pending_view %}active{% endif %}"
+           href="{% url 'tasks:pending_approval_list' %}">
+            <i class="bi bi-hourglass-split me-1"></i>
+            Ожидают утверждения
+            {% if count_pending_total %}
+                <span class="badge {% if is_pending_view %}text-bg-light{% else %}text-bg-warning{% endif %} ms-1">
+                    {{ count_pending_total }}
+                </span>
+            {% endif %}
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if is_declined_view %}active{% endif %}"
+           href="{% url 'tasks:pending_approval_list' %}?view=declined">
+            <i class="bi bi-x-octagon me-1"></i>
+            Не утверждены
+            {% if count_declined_total %}
+                <span class="badge {% if is_declined_view %}text-bg-light{% else %}text-bg-secondary{% endif %} ms-1">
+                    {{ count_declined_total }}
+                </span>
+            {% endif %}
+        </a>
+    </li>
+</ul>
+
+{# Подсказка-пояснение — текст зависит от режима #}
+<div class="alert alert-info d-flex align-items-start mb-3">
+    <i class="bi bi-info-circle me-2 mt-1"></i>
+    <div class="small">
+        {% if is_declined_view %}
+            Здесь — задачи, которые вы отклонили на этапе утверждения.
+            Они сохраняются в системе, но не влияют на нагрузку преподавателя.
+            Если задача больше не нужна — её можно <strong>удалить окончательно</strong>.
+            После удаления восстановить её будет невозможно.
+        {% else %}
+            Здесь — внеплановые задачи, которые преподаватели создали сами и которые ждут вашего решения.
+            После <strong>одобрения</strong> задача становится назначенной и её можно взять в работу.
+            После <strong>отклонения</strong> задача остаётся в системе со статусом «Не утверждена»
+            и её можно удалить окончательно.
+        {% endif %}
+    </div>
+</div>
+
+{# === Панель фильтров === #}
+{% if all_teachers or current_assignee or current_category %}
+<div class="card shadow-sm mb-3">
+    <div class="card-body py-2">
+        <form method="get" class="row g-2 align-items-end">
+
+            <div class="col-sm-6 col-md-4 col-xl-3">
+                <label class="form-label form-label-sm mb-1">Преподаватель</label>
+                <select name="assignee" class="form-select form-select-sm">
+                    <option value="">— Все —</option>
+                    {% for teacher in all_teachers %}
+                        <option value="{{ teacher.pk }}"
+                            {% if current_assignee == teacher.pk|stringformat:"s" %}selected{% endif %}>
+                            {{ teacher.full_name|default:teacher.username }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-sm-6 col-md-4 col-xl-3">
+                <label class="form-label form-label-sm mb-1">Категория</label>
+                <select name="category" class="form-select form-select-sm">
+                    <option value="">— Все —</option>
+                    {% for cat in all_categories %}
+                        <option value="{{ cat.pk }}"
+                            {% if current_category == cat.pk|stringformat:"s" %}selected{% endif %}>
+                            {{ cat.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-sm-12 col-md-4 col-xl-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary btn-sm">
+                    <i class="bi bi-funnel me-1"></i>Применить
+                </button>
+                <a href="{% url 'tasks:pending_approval_list' %}"
+                   class="btn btn-outline-secondary btn-sm"
+                   title="Сбросить фильтры">
+                    <i class="bi bi-x-lg"></i>
+                </a>
+            </div>
+
+        </form>
+    </div>
+</div>
+{% endif %}
+
+{# === Таблица задач === #}
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        {% if tasks %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="min-width: 240px;">Задача</th>
+                        <th>Преподаватель</th>
+                        <th>Категория</th>
+                        <th class="text-center">Часы</th>
+                        {% if is_declined_view %}
+                            <th>Отклонена</th>
+                            <th>Причина</th>
+                        {% else %}
+                            <th>Создана</th>
+                        {% endif %}
+                        <th class="text-end">Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for task in tasks %}
+                    <tr>
+                        <td>
+                            <div class="fw-semibold small">{{ task.title }}</div>
+                            {% if task.description %}
+                                <div class="text-muted small"
+                                     style="max-width: 380px; overflow: hidden; text-overflow: ellipsis;">
+                                    {{ task.description|truncatechars:120 }}
+                                </div>
+                            {% endif %}
+                        </td>
+                        <td class="small">
+                            {{ task.assignee.user.full_name|default:task.assignee.user.username }}
+                            <br>
+                            <span class="text-muted" style="font-size: 0.75rem;">
+                                {{ task.assignee.display_label }}
+                            </span>
+                        </td>
+                        <td class="small text-muted">{{ task.category.name }}</td>
+                        <td class="text-center small text-nowrap">
+                            {{ task.planned_hours|floatformat:0 }} ч.
+                        </td>
+
+                        {% if is_declined_view %}
+                            <td class="small text-muted text-nowrap">
+                                {{ task.updated_at|date:"d.m.Y" }}
+                            </td>
+                            <td class="small text-muted"
+                                style="max-width: 280px; overflow: hidden; text-overflow: ellipsis;">
+                                {% if task.rejection_reason %}
+                                    {{ task.rejection_reason|truncatechars:140 }}
+                                {% else %}
+                                    <span class="text-muted fst-italic">не указана</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end text-nowrap">
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-danger"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#deleteModal-{{ task.pk }}"
+                                        title="Удалить окончательно">
+                                    <i class="bi bi-trash"></i>
+                                    Удалить
+                                </button>
+
+                                {# Модалка подтверждения удаления #}
+                                <div class="modal fade" id="deleteModal-{{ task.pk }}"
+                                     tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">
+                                                    <i class="bi bi-exclamation-triangle text-danger me-1"></i>
+                                                    Окончательное удаление задачи
+                                                </h5>
+                                                <button type="button" class="btn-close"
+                                                        data-bs-dismiss="modal"
+                                                        aria-label="Закрыть"></button>
+                                            </div>
+                                            <div class="modal-body text-start">
+                                                <p>Вы собираетесь окончательно удалить задачу:</p>
+                                                <p class="fw-semibold mb-1">«{{ task.title }}»</p>
+                                                <p class="small text-muted mb-3">
+                                                    Преподаватель:
+                                                    {{ task.assignee.user.full_name|default:task.assignee.user.username }}
+                                                </p>
+                                                <div class="alert alert-danger small mb-0">
+                                                    <i class="bi bi-exclamation-triangle me-1"></i>
+                                                    Восстановить задачу после удаления будет невозможно.
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary"
+                                                        data-bs-dismiss="modal">
+                                                    Отмена
+                                                </button>
+                                                <form method="post"
+                                                      action="{% url 'tasks:declined_task_delete' task.pk %}"
+                                                      class="d-inline">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-danger">
+                                                        <i class="bi bi-trash me-1"></i>
+                                                        Удалить окончательно
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        {% else %}
+                            <td class="small text-muted text-nowrap">
+                                {{ task.created_at|date:"d.m.Y" }}
+                            </td>
+                            <td class="text-end text-nowrap">
+                                <a href="{% url 'tasks:pending_task_review' task.pk %}"
+                                   class="btn btn-sm btn-primary">
+                                    <i class="bi bi-eye me-1"></i>
+                                    Рассмотреть
+                                </a>
+                            </td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {# Пагинация #}
+        {% if is_paginated %}
+        <div class="d-flex justify-content-between align-items-center px-3 py-2 border-top">
+            <span class="text-muted small">
+                Показано {{ page_obj.start_index }}–{{ page_obj.end_index }}
+                из {{ paginator.count }}
+            </span>
+            <nav>
+                <ul class="pagination pagination-sm mb-0">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link"
+                               href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}">
+                                &laquo;
+                            </a>
+                        </li>
+                    {% endif %}
+                    {% for num in paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link"
+                                   href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ num }}">
+                                    {{ num }}
+                                </a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link"
+                               href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}">
+                                &raquo;
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="text-center text-muted py-5">
+            <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+            {% if current_assignee or current_category %}
+                По выбранным фильтрам задач не найдено.
+                <br>
+                <a href="?view={{ view_mode }}" class="text-decoration-none">
+                    Сбросить фильтры
+                </a>
+            {% else %}
+                {% if is_declined_view %}
+                    Нет отклонённых задач в текущем году.
+                {% else %}
+                    Нет задач, ожидающих утверждения.
+                {% endif %}
+                <br>
+                <span class="small">Когда преподаватели создадут внеплановые задачи, они появятся здесь.</span>
+            {% endif %}
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+
+{% endblock %}

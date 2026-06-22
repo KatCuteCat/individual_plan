@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+
+{% block title %}Факт учебной нагрузки — {{ target_user.full_name }}{% endblock %}
+
+{% block page_header %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">
+        <i class="bi bi-pencil-square me-2"></i>
+        Факт учебной нагрузки
+    </h4>
+    <a href="{{ back_url }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>К карточке
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="card card-vgtu mb-3">
+    <div class="card-header">
+        <strong>{{ target_user.full_name }}</strong>
+        <span class="text-muted ms-2">
+            {{ position.position.name }},
+            {{ position.get_employment_type_display }}{% if position.rate %}, {{ position.rate }} ст.{% endif %}
+            — {{ position.academic_year.name }}
+        </span>
+    </div>
+
+    {% if not items %}
+        <div class="card-body text-center text-muted py-5">
+            Учебная нагрузка не загружена. Сначала выполните импорт из 1С.
+        </div>
+    {% else %}
+        <div class="card-body border-bottom py-2">
+            <div class="d-flex gap-2 flex-wrap align-items-center">
+                <form method="post" class="d-inline"
+                      onsubmit="return confirm('Скопировать плановые часы в факт для всех строк?');">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="copy_plan">
+                    <button type="submit" class="btn btn-sm btn-outline-primary"
+                            {% if position.academic_year.is_archived %}disabled{% endif %}>
+                        <i class="bi bi-clipboard-check me-1"></i>Факт = План
+                    </button>
+                </form>
+                <form method="post" class="d-inline"
+                      onsubmit="return confirm('Обнулить фактические часы для всех строк?');">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="reset">
+                    <button type="submit" class="btn btn-sm btn-outline-danger"
+                            {% if position.academic_year.is_archived %}disabled{% endif %}>
+                        <i class="bi bi-x-circle me-1"></i>Обнулить факт
+                    </button>
+                </form>
+                {% if not position.academic_year.is_archived %}
+                <button class="btn btn-sm btn-outline-vgtu" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#addRow">
+                    <i class="bi bi-plus-circle me-1"></i>Добавить нагрузку
+                </button>
+                {% endif %}
+                <span class="text-muted small ms-auto">
+                    Строк: {{ items|length }}.
+                    План: <strong id="totalPlan">0</strong> ч.
+                    Факт: <strong id="totalFact">0</strong> ч.
+                </span>
+            </div>
+        </div>
+        {% if not position.academic_year.is_archived %}
+        <div class="collapse border-bottom" id="addRow">
+            <form method="post" class="card-body">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add">
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label small mb-0">Дисциплина</label>
+                        <input type="text" name="new_discipline" class="form-control form-control-sm" required>
+                    </div>
+                    <div class="col-md-1">
+                        <label class="form-label small mb-0">Сем.</label>
+                        <input type="number" name="new_semester" class="form-control form-control-sm"
+                               min="1" max="12" required>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small mb-0">Вид занятия</label>
+                        <select name="new_activity_type" class="form-select form-select-sm" required>
+                            <option value="">—</option>
+                            {% for at in activity_types %}
+                                <option value="{{ at.pk }}">{{ at.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small mb-0">Группа</label>
+                        <input type="text" name="new_group" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-md-1">
+                        <label class="form-label small mb-0">План</label>
+                        <input type="text" name="new_hours" class="form-control form-control-sm text-end"
+                               inputmode="decimal" required>
+                    </div>
+                    <div class="col-md-1">
+                        <label class="form-label small mb-0">Факт</label>
+                        <input type="text" name="new_hours_fact" class="form-control form-control-sm text-end"
+                               inputmode="decimal" placeholder="= план">
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-sm btn-vgtu w-100">
+                            <i class="bi bi-plus-lg me-1"></i>Добавить
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        {% endif %}
+        <form method="post" id="factForm">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="save">
+            <div class="table-responsive">
+                <table class="table table-hover table-sm mb-0" id="factTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width:2.5rem" class="text-center">#</th>
+                            <th>Дисциплина</th>
+                            <th class="text-center" style="width:3rem">Сем.</th>
+                            <th>Вид занятия</th>
+                            <th style="width:11rem">Факультет / группа</th>
+                            <th class="text-end" style="width:5.5rem">План</th>
+                            <th class="text-center" style="width:7rem">Факт</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items %}
+                        <tr>
+                            <td class="text-center text-muted small">{{ forloop.counter }}</td>
+                            <td>{{ item.discipline }}</td>
+                            <td class="text-center">{{ item.semester }}</td>
+                            <td>{{ item.activity_type.name }}</td>
+                            <td class="small">{{ item.group_number|default:"—"|truncatechars:40 }}</td>
+                            <td class="text-end plan-cell" data-plan="{{ item.hours }}">
+                                {{ item.hours|floatformat:"-2" }}
+                            </td>
+                            <td class="text-center">
+                                {% if position.academic_year.is_archived %}
+                                    {{ item.hours_fact|floatformat:"-2" }}
+                                {% else %}
+                                    <input type="text"
+                                           name="fact_{{ item.pk }}"
+                                           value="{{ item.hours_fact|floatformat:'-2' }}"
+                                           class="form-control form-control-sm text-end fact-input"
+                                           style="width:5.5rem; display:inline-block;"
+                                           inputmode="decimal">
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot class="table-light fw-bold">
+                        <tr>
+                            <td colspan="5" class="text-end">Итого:</td>
+                            <td class="text-end" id="footPlan">—</td>
+                            <td class="text-center" id="footFact">—</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            {% if not position.academic_year.is_archived %}
+            <div class="card-footer d-flex justify-content-between align-items-center">
+                <a href="{{ back_url }}" class="btn btn-outline-secondary btn-sm">Отмена</a>
+                <button type="submit" class="btn btn-vgtu">
+                    <i class="bi bi-check-lg me-1"></i>Сохранить факт
+                </button>
+            </div>
+            {% endif %}
+        </form>
+    {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    function recalcTotals() {
+        var totalPlan = 0, totalFact = 0;
+        document.querySelectorAll('.plan-cell').forEach(function(cell) {
+            totalPlan += parseFloat(cell.dataset.plan) || 0;
+        });
+        document.querySelectorAll('.fact-input').forEach(function(inp) {
+            totalFact += parseFloat(inp.value.replace(',', '.')) || 0;
+        });
+        var fmt = function(n) { return n % 1 === 0 ? n.toString() : n.toFixed(2); };
+        document.getElementById('totalPlan').textContent = fmt(totalPlan);
+        document.getElementById('totalFact').textContent = fmt(totalFact);
+        var fp = document.getElementById('footPlan');
+        var ff = document.getElementById('footFact');
+        if (fp) fp.textContent = fmt(totalPlan);
+        if (ff) ff.textContent = fmt(totalFact);
+    }
+    document.querySelectorAll('.fact-input').forEach(function(inp) {
+        inp.addEventListener('input', recalcTotals);
+    });
+    recalcTotals();
+});
+</script>
+{% endblock %}

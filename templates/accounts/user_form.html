@@ -1,0 +1,187 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block page_header %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">
+        <i class="bi bi-person{% if not is_edit %}-plus{% endif %} me-2"></i>{{ page_title }}
+    </h4>
+    <a href="{% url 'accounts:user_list' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>К списку
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card card-vgtu">
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+
+                    <!-- Логин -->
+                    <div class="mb-3">
+                        <label for="id_username" class="form-label">
+                            Логин <span class="text-danger">*</span>
+                        </label>
+                        {{ form.username }}
+                        {% if form.username.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.username.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">Будет использоваться для входа в систему</div>
+                    </div>
+
+                    <!-- ФИО -->
+                    <div class="mb-3">
+                        <label for="id_full_name" class="form-label">
+                            ФИО <span class="text-danger">*</span>
+                        </label>
+                        {{ form.full_name }}
+                        {% if form.full_name.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.full_name.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Email -->
+                    <div class="mb-3">
+                        <label for="id_email" class="form-label">Email</label>
+                        {{ form.email }}
+                        {% if form.email.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.email.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <hr>
+
+                    <!-- Роль -->
+                    <div class="mb-3">
+                        <label for="id_role" class="form-label">
+                            Роль <span class="text-danger">*</span>
+                        </label>
+                        {{ form.role }}
+                        {% if form.role.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.role.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Учёное звание и степень -->
+                    <div class="mb-3">
+                        <label for="id_academic_title" class="form-label">Учёное звание и степень</label>
+                        {{ form.academic_title }}
+                        {% if form.academic_title.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.academic_title.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            Будет отображаться в шапке индивидуального плана.
+                            {% if is_edit %}
+                                Должность и ставка теперь задаются в позициях преподавателя — добавьте их в его карточке.
+                            {% else %}
+                                Должность и ставку добавите позже, создав позицию для этого пользователя в учебном году.
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {% if not is_edit %}
+                    <!-- Пароль (только при создании) -->
+                    <hr>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="id_password1" class="form-label">
+                                Пароль <span class="text-danger">*</span>
+                            </label>
+                            {{ form.password1 }}
+                            {% if form.password1.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.password1.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_password2" class="form-label">
+                                Подтверждение пароля <span class="text-danger">*</span>
+                            </label>
+                            {{ form.password2 }}
+                            {% if form.password2.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.password2.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if is_edit %}
+                    <!-- Активность (только при редактировании) -->
+                    <hr>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            {{ form.is_active }}
+                            <label class="form-check-label" for="id_is_active">
+                                Пользователь активен
+                            </label>
+                        </div>
+                        <div class="form-text">Неактивный пользователь не может войти в систему</div>
+                    </div>
+                    {% endif %}
+
+                    <hr>
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'accounts:user_list' %}" class="btn btn-outline-secondary">
+                            Отмена
+                        </a>
+                        <button type="submit" class="btn btn-vgtu">
+                            <i class="bi bi-check-lg me-1"></i>{{ button_text }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {% if is_edit %}
+    <!-- Боковая панель при редактировании -->
+    <div class="col-lg-4">
+        <div class="card mb-3">
+            <div class="card-header">
+                <strong><i class="bi bi-info-circle me-1"></i>Информация</strong>
+            </div>
+            <div class="card-body small">
+                <p><strong>Логин:</strong> {{ object.username }}</p>
+                <p><strong>Дата регистрации:</strong> {{ object.date_joined|date:"d.m.Y H:i" }}</p>
+                <p><strong>Последний вход:</strong>
+                    {% if object.last_login %}
+                        {{ object.last_login|date:"d.m.Y H:i" }}
+                    {% else %}
+                        ещё не входил
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <strong><i class="bi bi-key me-1"></i>Пароль</strong>
+            </div>
+            <div class="card-body">
+                <p class="small text-muted">Задать новый пароль для этого пользователя:</p>
+                <a href="{% url 'accounts:user_set_password' object.pk %}" class="btn btn-outline-secondary btn-sm w-100">
+                    <i class="bi bi-key me-1"></i>Сменить пароль
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

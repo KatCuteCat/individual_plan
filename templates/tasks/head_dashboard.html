@@ -1,0 +1,345 @@
+{% extends 'base.html' %}
+
+{% block title %}Дашборд заведующего{% endblock %}
+
+{% block content %}
+
+{# Заголовок #}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-0">Дашборд</h1>
+        {% if active_year %}
+            <span class="text-muted small">Учебный год: {{ active_year.name }}</span>
+        {% endif %}
+    </div>
+    {% if active_year %}
+    <a href="{% url 'tasks:task_create' %}" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1"></i>Создать задачу
+    </a>
+    {% endif %}
+</div>
+
+{# Нет активного года — предупреждение #}
+{% if not active_year %}
+<div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle me-2"></i>
+    Нет активного учебного года. Обратитесь к администратору системы.
+</div>
+{% else %}
+
+{# === Карточки-счётчики === #}
+<div class="row g-3 mb-4">
+
+    {# Всего задач #}
+    <div class="col-sm-6 col-lg-4">
+        <div class="card shadow-sm h-100 border-0">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-3 p-3 bg-primary bg-opacity-10">
+                    <i class="bi bi-list-task fs-4 text-primary"></i>
+                </div>
+                <div>
+                    <div class="fs-2 fw-bold lh-1">{{ count_total }}</div>
+                    <div class="text-muted small">Всего задач</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Ожидают утверждения #}
+    <div class="col-sm-6 col-lg-4">
+        <a href="{% url 'tasks:pending_approval_list' %}"
+           class="text-decoration-none">
+            <div class="card shadow-sm h-100 border-0">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="rounded-3 p-3 {% if count_pending_approval > 0 %}bg-dark bg-opacity-10{% else %}bg-secondary bg-opacity-10{% endif %}">
+                        <i class="bi bi-clipboard-check fs-4 {% if count_pending_approval > 0 %}text-dark{% else %}text-secondary{% endif %}"></i>
+                    </div>
+                    <div>
+                        <div class="fs-2 fw-bold lh-1 {% if count_pending_approval > 0 %}text-dark{% else %}text-body{% endif %}">
+                            {{ count_pending_approval }}
+                        </div>
+                        <div class="text-muted small">Ожидают утверждения</div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    {# Ожидают проверки (выполненные) #}
+    <div class="col-sm-6 col-lg-4">
+        <div class="card shadow-sm h-100 border-0">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-3 p-3 bg-warning bg-opacity-10">
+                    <i class="bi bi-hourglass-split fs-4 text-warning"></i>
+                </div>
+                <div>
+                    <div class="fs-2 fw-bold lh-1">{{ count_pending }}</div>
+                    <div class="text-muted small">Ожидают проверки</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# В работе #}
+    <div class="col-sm-6 col-lg-4">
+        <div class="card shadow-sm h-100 border-0">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-3 p-3 bg-info bg-opacity-10">
+                    <i class="bi bi-play-circle fs-4 text-info"></i>
+                </div>
+                <div>
+                    <div class="fs-2 fw-bold lh-1">{{ count_in_progress }}</div>
+                    <div class="text-muted small">В работе</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Просрочено #}
+    <div class="col-sm-6 col-lg-4">
+        <div class="card shadow-sm h-100 border-0">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-3 p-3 {% if count_overdue > 0 %}bg-danger bg-opacity-10{% else %}bg-success bg-opacity-10{% endif %}">
+                    <i class="bi bi-alarm fs-4 {% if count_overdue > 0 %}text-danger{% else %}text-success{% endif %}"></i>
+                </div>
+                <div>
+                    <div class="fs-2 fw-bold lh-1 {% if count_overdue > 0 %}text-danger{% endif %}">
+                        {{ count_overdue }}
+                    </div>
+                    <div class="text-muted small">Просрочено</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{# Внеплановые задачи на утверждение #}
+{% if tasks_pending_approval %}
+<div class="card shadow-sm mb-4" id="pending-approval">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-semibold">
+            <i class="bi bi-clipboard-check me-1 text-dark"></i>
+            Ожидают утверждения
+        </span>
+        {% if count_pending_approval > 0 %}
+            <a href="{% url 'tasks:pending_approval_list' %}"
+               class="btn btn-sm btn-outline-secondary">
+                Все ({{ count_pending_approval }})
+            </a>
+        {% endif %}
+    </div>
+    <div class="card-body p-0">
+        <ul class="list-group list-group-flush">
+            {% for task in tasks_pending_approval %}
+            <li class="list-group-item px-3 py-2">
+                <div class="d-flex justify-content-between align-items-start gap-2">
+                    <div class="flex-grow-1">
+                        <div class="fw-semibold">{{ task.title }}</div>
+                        <div class="small text-muted">
+                            {{ task.assignee.user.full_name|default:task.assignee.user.username }}
+                            — {{ task.assignee.display_label }}
+                        </div>
+                        <div class="small text-muted">
+                            <span class="badge text-bg-light border">
+                                {{ task.category.name }}
+                            </span>
+                            <span class="ms-1">{{ task.planned_hours }} ч.</span>
+                            <span class="ms-1">
+                                <i class="bi bi-clock"></i>
+                                {{ task.created_at|date:"d.m.Y H:i" }}
+                            </span>
+                        </div>
+                    </div>
+                    <a href="{% url 'tasks:pending_task_review' task.pk %}"
+                       class="btn btn-sm btn-primary align-self-center"
+                       title="Открыть для решения">
+                        <i class="bi bi-eye me-1"></i>Рассмотреть
+                    </a>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endif %}
+
+{# === Два блока рядом: «Требуют внимания» + «Преподаватели» === #}
+<div class="row g-4">
+
+    {# Блок: задачи ожидающие проверки #}
+    <div class="col-lg-5">
+        <div class="card shadow-sm h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span class="fw-semibold">
+                    <i class="bi bi-bell me-1 text-warning"></i>Требуют проверки
+                </span>
+                {% if count_pending > 0 %}
+                    <a href="{% url 'tasks:task_list' %}?status=completed"
+                       class="btn btn-sm btn-outline-secondary">
+                        Все ({{ count_pending }})
+                    </a>
+                {% endif %}
+            </div>
+            <div class="card-body p-0">
+                {% if tasks_pending %}
+                    <ul class="list-group list-group-flush">
+                        {% for task in tasks_pending %}
+                        <li class="list-group-item px-3 py-2">
+                            <div class="d-flex justify-content-between align-items-start gap-2">
+                                <div class="overflow-hidden">
+                                    <div class="text-truncate fw-semibold small" title="{{ task.title }}">
+                                        {{ task.title }}
+                                    </div>
+                                    <div class="text-muted" style="font-size: 0.75rem;">
+                                        {{ task.assignee.user.full_name|default:task.assignee.user.username }}
+                                        &nbsp;·&nbsp;
+                                        {{ task.category.name }}
+                                    </div>
+                                </div>
+                                <div class="text-nowrap">
+                                    <button type="button"
+                                            class="btn btn-sm btn-primary align-self-center"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#reportModal-{{ task.pk }}"
+                                            title="Открыть отчёт">
+                                        <i class="bi bi-file-text me-1"></i>Отчёт
+                                    </button>
+                                </div>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <div class="text-center text-muted py-5">
+                        <i class="bi bi-check-circle fs-2 d-block mb-2 text-success"></i>
+                        Нет задач, ожидающих проверки
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        {# Модалки отчётов — вне list-group, чтобы не наследовать стили элементов списка #}
+        {% for task in tasks_pending %}
+            {% include 'tasks/_task_report_modal.html' with task=task %}
+        {% endfor %}
+    </div>
+
+    {# Блок: преподаватели с нагрузкой #}
+    <div class="col-lg-7">
+        <div class="card shadow-sm h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span class="fw-semibold">
+                    <i class="bi bi-people me-1"></i>Нагрузка преподавателей
+                </span>
+                <a href="{% url 'tasks:teacher_list' %}" class="btn btn-sm btn-outline-secondary">
+                    Все
+                </a>
+            </div>
+            <div class="card-body p-0">
+                {% if teachers_summary %}
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Преподаватель</th>
+                                    <th class="text-center">Задач</th>
+                                    <th style="min-width: 160px;">Нагрузка</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in teachers_summary %}
+                                <tr>
+                                    <td>
+                                        <div class="fw-semibold small">
+                                            {{ item.user.full_name|default:item.user.username }}
+                                        </div>
+                                        <div class="text-muted" style="font-size: 0.72rem;">
+                                            {% if item.teacher_position %}
+                                                {{ item.teacher_position.position.name }}
+                                                {% if item.teacher_position.is_hourly %}
+                                                    · почасовая
+                                                {% else %}
+                                                    · {{ item.teacher_position.get_employment_type_display|lower }}
+                                                    {% if item.teacher_position.rate %} {{ item.teacher_position.rate }} ст.{% endif %}
+                                                {% endif %}
+                                            {% else %}
+                                                Должность не указана
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-light text-dark border">
+                                            {{ item.tasks_count }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {# Прогресс-бар: плановые часы vs лимит #}
+                                        {% if item.max_total_hours > 0 %}
+                                            {% widthratio item.total_planned item.max_total_hours 100 as pct %}
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div class="progress flex-grow-1" style="height: 8px;">
+                                                    <div class="progress-bar
+                                                        {% if item.is_overloaded %}bg-danger
+                                                        {% elif pct|add:0 >= 90 %}bg-warning
+                                                        {% else %}bg-success{% endif %}"
+                                                        style="width: {% if pct > 100 %}100{% else %}{{ pct }}{% endif %}%">
+                                                    </div>
+                                                </div>
+                                                <span class="text-nowrap small
+                                                    {% if item.is_overloaded %}text-danger fw-semibold{% endif %}">
+                                                    {{ item.total_planned|floatformat:0 }}/{{ item.max_total_hours }}
+                                                </span>
+                                            </div>
+                                            {# Бейджи нарушений по категориям #}
+                                            {% if item.category_violations_count > 0 or item.category_below_min_count > 0 %}
+                                            <div class="mt-1 d-flex flex-wrap gap-1" style="font-size: 0.7rem;">
+                                                {% if item.category_violations_count > 0 %}
+                                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle"
+                                                      title="Категорий с превышением максимума">
+                                                    <i class="bi bi-exclamation-triangle me-1"></i>
+                                                    {{ item.category_violations_count }} прев.
+                                                </span>
+                                                {% endif %}
+                                                {% if item.category_below_min_count > 0 %}
+                                                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle"
+                                                      title="Категорий с недобором минимума">
+                                                    <i class="bi bi-arrow-down-circle me-1"></i>
+                                                    {{ item.category_below_min_count }} недоб.
+                                                </span>
+                                                {% endif %}
+                                            </div>
+                                            {% endif %}
+                                        {% elif item.teacher_position.is_hourly %}
+                                            {# Почасовая: второй половины дня нет — показываем учебную нагрузку из 1С #}
+                                            <span class="text-muted small">
+                                                <i class="bi bi-mortarboard me-1"></i>
+                                                Учебная нагрузка:
+                                                <span class="fw-semibold text-dark">
+                                                    {{ item.teacher_position.teaching_hours|floatformat:"-2" }} ч.
+                                                </span>
+                                                <span class="badge bg-light text-muted border ms-1">только 1-я половина</span>
+                                            </span>
+                                        {% else %}
+                                            <span class="text-muted small">{{ item.total_planned|floatformat:0 }} ч. (норма не задана)</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted py-5">
+                        <i class="bi bi-people fs-2 d-block mb-2"></i>
+                        Преподаватели не найдены
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endif %}
+
+{% endblock %}

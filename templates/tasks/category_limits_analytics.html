@@ -1,0 +1,271 @@
+{% extends 'base.html' %}
+
+{% block title %}Лимиты по категориям{% endblock %}
+
+{% block page_header %}
+<h4 class="mb-0">
+    <i class="bi bi-pie-chart me-2"></i>Лимиты по категориям
+</h4>
+{% if academic_year %}
+    <span class="text-muted small">
+        Учебный год: {{ academic_year.name }}
+        {% if is_archive_view %}
+            <span class="badge bg-secondary ms-1">Архив</span>
+        {% endif %}
+    </span>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+
+<div class="mb-3">
+    <a href="{% url 'tasks:head_dashboard' %}" class="text-decoration-none text-muted">
+        <i class="bi bi-arrow-left me-1"></i>Назад к дашборду
+    </a>
+</div>
+
+{# Переключатель года и фильтр #}
+<div class="card shadow-sm mb-4">
+    <div class="card-body py-2">
+        <form method="get" class="d-flex align-items-center gap-3 flex-wrap">
+            <div class="d-flex align-items-center gap-2">
+                <label class="form-label mb-0 fw-semibold text-nowrap">Учебный год:</label>
+                <select name="year" class="form-select form-select-sm" style="max-width: 200px;"
+                        onchange="this.form.submit()">
+                    {% for year in all_years %}
+                        <option value="{{ year.pk }}"
+                            {% if academic_year and academic_year.pk == year.pk %}selected{% endif %}>
+                            {{ year.name }}{% if year.is_active %} (активный){% endif %}
+                            {% if year.is_archived %} (архив){% endif %}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-check ms-md-3">
+                <input class="form-check-input" type="checkbox" id="show_below_min"
+                       name="show_below_min" value="1"
+                       {% if show_below_min %}checked{% endif %}
+                       onchange="this.form.submit()">
+                <label class="form-check-label small" for="show_below_min">
+                    Показывать позиции ниже минимума
+                    <i class="bi bi-info-circle text-muted ms-1"
+                       title="«Ниже минимума» в процессе планирования — нормальное состояние. Включайте этот фильтр ближе к концу учебного года, когда план уже должен быть полностью распределён."
+                       data-bs-toggle="tooltip" style="font-size: 0.8rem;"></i>
+                </label>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if not academic_year %}
+<div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle me-2"></i>
+    Нет активного учебного года.
+</div>
+{% else %}
+
+{# Сводные карточки #}
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card shadow-sm text-center h-100">
+            <div class="card-body py-3">
+                <div class="fs-3 fw-bold text-primary">{{ total_positions }}</div>
+                <div class="text-muted small">Позиций (не почасовых)</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card shadow-sm text-center h-100">
+            <div class="card-body py-3">
+                <div class="fs-3 fw-bold {% if positions_with_issues > 0 %}text-warning{% else %}text-success{% endif %}">
+                    {{ positions_with_issues }}
+                </div>
+                <div class="text-muted small">С отклонениями</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card shadow-sm text-center h-100">
+            <div class="card-body py-3">
+                <div class="fs-3 fw-bold {% if total_violations > 0 %}text-danger{% else %}text-success{% endif %}">
+                    {{ total_violations }}
+                </div>
+                <div class="text-muted small">Превышений макс.</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card shadow-sm text-center h-100">
+            <div class="card-body py-3">
+                <div class="fs-3 fw-bold {% if total_overloads > 0 %}text-danger{% else %}text-success{% endif %}">
+                    {{ total_overloads }}
+                </div>
+                <div class="text-muted small">
+                    Превышен годовой лимит
+                    <i class="bi bi-info-circle ms-1"
+                       title="Сумма «учебная нагрузка + вторая половина дня» больше 1550 × ставка, либо учебная нагрузка больше максимума по должности."
+                       data-bs-toggle="tooltip" style="font-size: 0.75rem;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card shadow-sm text-center h-100">
+            <div class="card-body py-3">
+                <div class="fs-3 fw-bold text-muted">{{ total_below_min }}</div>
+                <div class="text-muted small">
+                    Ниже минимума
+                    <i class="bi bi-info-circle ms-1"
+                       title="Информационный показатель. Норма к концу учебного года — отсутствие позиций ниже минимума, но в процессе планирования это нормально."
+                       data-bs-toggle="tooltip" style="font-size: 0.75rem;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Таблица нарушений #}
+{% if teachers_data %}
+<div class="card shadow-sm">
+    <div class="card-header fw-semibold d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <span>
+            <i class="bi bi-exclamation-triangle me-1"></i>
+            {% if show_below_min %}
+                Позиции с отклонениями от лимитов
+            {% else %}
+                Позиции с превышением лимитов
+            {% endif %}
+        </span>
+        {% if not show_below_min and total_below_min > 0 %}
+            <span class="badge bg-light text-muted fw-normal border">
+                Ещё {{ total_below_min }} ниже минимума скрыто
+            </span>
+        {% endif %}
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Преподаватель</th>
+                        <th>Позиция</th>
+                        <th class="text-center">2-я пол. дня</th>
+                        <th>Превышение общего лимита</th>
+                        <th>Превышения максимума</th>
+                        <th>Ниже минимума</th>
+                        <th class="text-end">Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in teachers_data %}
+                    <tr>
+                        <td class="fw-semibold">
+                            {{ item.position.user.full_name|default:item.position.user.username }}
+                        </td>
+                        <td class="small text-muted">
+                            {{ item.position.position.name }}
+                            · {{ item.position.get_employment_type_display }}
+                            {% if item.position.rate %}· {{ item.position.rate }} ст.{% endif %}
+                        </td>
+                        <td class="text-center small">
+                            {% if item.second_half_hours is not None %}
+                                {{ item.second_half_hours|floatformat:0 }} ч.
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if item.overloads %}
+                                {% for o in item.overloads %}
+                                <div class="small mb-1">
+                                    <span class="badge bg-danger">{{ o.label }}</span>
+                                    {{ o.planned|floatformat:0 }} / {{ o.limit|floatformat:0 }} ч.
+                                    <span class="text-muted">(+{{ o.excess|floatformat:0 }} ч.)</span>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <span class="text-muted small">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if item.violations %}
+                                {% for v in item.violations %}
+                                <div class="small mb-1">
+                                    <span class="badge bg-danger">{{ v.category }}</span>
+                                    {{ v.planned|floatformat:0 }} / {{ v.max_hours|floatformat:0 }} ч.
+                                    <span class="text-muted">(макс. {{ v.max_percent }}%)</span>
+                                    {% if v.regulation_point %}
+                                        <i class="bi bi-question-circle text-muted"
+                                           title="Пункт приказа: {{ v.regulation_point }}"
+                                           data-bs-toggle="tooltip" style="font-size: 0.75rem;"></i>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <span class="text-muted small">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if item.below_min %}
+                                {% for b in item.below_min %}
+                                <div class="small mb-1">
+                                    <span class="badge bg-warning text-dark">{{ b.category }}</span>
+                                    {{ b.planned|floatformat:0 }} / {{ b.min_hours|floatformat:0 }} ч.
+                                    <span class="text-muted">(мин. {{ b.min_percent }}%)</span>
+                                    {% if b.regulation_point %}
+                                        <i class="bi bi-question-circle text-muted"
+                                           title="Пункт приказа: {{ b.regulation_point }}"
+                                           data-bs-toggle="tooltip" style="font-size: 0.75rem;"></i>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <span class="text-muted small">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end text-nowrap">
+                            <a href="{% url 'tasks:teacher_card' item.position.user.pk %}?year={{ academic_year.pk }}"
+                               class="btn btn-sm btn-outline-primary py-0 px-2">
+                                <i class="bi bi-person-lines-fill"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="card shadow-sm">
+    <div class="card-body text-center text-muted py-5">
+        <i class="bi bi-check-circle fs-1 d-block mb-3 text-success"></i>
+        {% if show_below_min %}
+            <h5>Отклонений от лимитов нет</h5>
+            <p class="mb-1">Все позиции укладываются в нормативы по категориям второй половины дня.</p>
+        {% else %}
+            <h5>Превышений максимума нет</h5>
+            <p class="mb-1">Ни на одной позиции лимит максимума по категориям не превышен.</p>
+            {% if total_below_min > 0 %}
+                <p class="mb-0 small">
+                    {{ total_below_min }} позиц{{ total_below_min|pluralize:"ия,ии,ий" }} ниже минимума —
+                    включите фильтр выше, если планируете проверить распределение к концу года.
+                </p>
+            {% endif %}
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+{% endif %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function(el) { return new bootstrap.Tooltip(el); });
+    });
+</script>
+{% endblock %}
+
+{% endblock %}

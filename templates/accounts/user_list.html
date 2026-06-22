@@ -1,0 +1,175 @@
+{% extends 'base.html' %}
+
+{% block title %}Пользователи{% endblock %}
+
+{% block page_header %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">
+        <i class="bi bi-people me-2"></i>Пользователи
+    </h4>
+    <div class="d-flex gap-2">
+        <a href="{% url 'tasks:export_word_all' %}" class="btn btn-outline-success">
+            <i class="bi bi-file-earmark-zip me-1"></i>Скачать все планы
+        </a>
+        <a href="{% url 'accounts:user_create' %}" class="btn btn-vgtu">
+            <i class="bi bi-person-plus me-1"></i>Добавить пользователя
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<!-- Фильтры -->
+<div class="card mb-3">
+    <div class="card-body py-2">
+        <form method="get" class="row g-2 align-items-center">
+            <div class="col-auto">
+                <label class="col-form-label text-muted small">Роль:</label>
+            </div>
+            <div class="col-auto">
+                <select name="role" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">Все роли</option>
+                    {% for value, label in role_choices %}
+                        <option value="{{ value }}" {% if current_role == value %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-auto">
+                <label class="col-form-label text-muted small">Статус:</label>
+            </div>
+            <div class="col-auto">
+                <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">Все</option>
+                    <option value="active" {% if current_status == 'active' %}selected{% endif %}>Активные</option>
+                    <option value="inactive" {% if current_status == 'inactive' %}selected{% endif %}>Неактивные</option>
+                </select>
+            </div>
+            {% if current_role or current_status %}
+            <div class="col-auto">
+                <a href="{% url 'accounts:user_list' %}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-x-lg"></i> Сбросить
+                </a>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<!-- Таблица пользователей -->
+<div class="card card-vgtu">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-vgtu">
+                <tr>
+                    <th>ФИО</th>
+                    <th>Логин</th>
+                    <th>Роль</th>
+                    <th>Учёное звание</th>
+                    <th class="text-center" title="Активные позиции в текущем учебном году">
+                        Позиций
+                    </th>
+                    <th>Статус</th>
+                    <th class="text-end">Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr {% if not u.is_active %}class="table-secondary"{% endif %}>
+                    <td>
+                        <strong>{{ u.full_name|default:"—" }}</strong>
+                        {% if u.email %}
+                            <br><small class="text-muted">{{ u.email }}</small>
+                        {% endif %}
+                    </td>
+                    <td>{{ u.username }}</td>
+                    <td>
+                        {% if u.role == 'admin' %}
+                            <span class="badge bg-dark">{{ u.get_role_display }}</span>
+                        {% elif u.role == 'head' %}
+                            <span class="badge bg-vgtu">{{ u.get_role_display }}</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ u.get_role_display }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ u.academic_title|default:"—" }}</td>
+                    <td class="text-center">
+                        {% if active_year %}
+                            {% with positions_in_year=u.teacher_positions.all %}
+                                {% with active_count=0 %}{% endwith %}
+                                {% with year_positions=positions_in_year|dictsort:"academic_year_id" %}
+                                    {% regroup positions_in_year by academic_year_id as by_year %}
+                                    {% for grp in by_year %}
+                                        {% if grp.grouper == active_year.pk %}
+                                            <span class="badge bg-vgtu"
+                                                  title="{% for pos in grp.list %}{{ pos.display_label }}{% if not forloop.last %}; {% endif %}{% endfor %}">
+                                                {{ grp.list|length }}
+                                            </span>
+                                        {% endif %}
+                                    {% endfor %}
+                                    {% if not by_year %}<span class="text-muted">—</span>{% endif %}
+                                {% endwith %}
+                            {% endwith %}
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if u.is_active %}
+                            <span class="badge bg-success">Активен</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Неактивен</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <div class="btn-group btn-group-sm">
+                            <a href="{% url 'accounts:user_detail' u.pk %}"
+                               class="btn btn-outline-vgtu" title="Карточка и позиции">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a href="{% url 'accounts:user_edit' u.pk %}"
+                               class="btn btn-outline-vgtu" title="Редактировать">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <a href="{% url 'accounts:user_set_password' u.pk %}"
+                               class="btn btn-outline-secondary" title="Сменить пароль">
+                                <i class="bi bi-key"></i>
+                            </a>
+                            {% if u != request.user %}
+                            <form method="post" action="{% url 'accounts:user_toggle_active' u.pk %}"
+                                  class="d-inline"
+                                  onsubmit="return confirm('{% if u.is_active %}Деактивировать{% else %}Активировать{% endif %} пользователя «{{ u.full_name|default:u.username }}»?');">
+                                {% csrf_token %}
+                                <button type="submit"
+                                        class="btn {% if u.is_active %}btn-outline-danger{% else %}btn-outline-success{% endif %}"
+                                        title="{% if u.is_active %}Деактивировать{% else %}Активировать{% endif %}">
+                                    {% if u.is_active %}
+                                        <i class="bi bi-person-x"></i>
+                                    {% else %}
+                                        <i class="bi bi-person-check"></i>
+                                    {% endif %}
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center text-muted py-4">
+                        Пользователи не найдены
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="text-muted small mt-2">
+    Всего пользователей: {{ users|length }}
+</div>
+
+{% endblock %}

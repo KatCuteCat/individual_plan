@@ -1,0 +1,421 @@
+/* ============================================================
+   Стили ВГТУ — Модуль индивидуального плана преподавателей
+   Брендовые цвета:
+     Pantone 296C — R38 G48 B69  (#263045) — тёмно-синий
+     Pantone 465C — R185 G159 B110 (#B99F6E) — жёлтый/песочный
+     Pantone 427C — R208 G208 B208 (#D0D0D0) — серый
+   Шрифты: Gotham Pro (заголовки, UI), Calibri (тексты)
+   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300&family=Open+Sans:wght@400;500;600&display=swap');
+/* --- Корневые переменные --- */
+:root {
+    /* Основная брендовая палитра (Pantone → RGB) */
+    --vgtu-blue: #263045;
+    --vgtu-blue-dark: #1a2233;
+    --vgtu-blue-light: #eceef1;
+    --vgtu-gold: #B99F6E;
+    --vgtu-gold-dark: #a08b5c;
+    --vgtu-gold-light: #f5f0e6;
+    --vgtu-gray-brand: #D0D0D0;
+    --vgtu-gray: #6c757d;
+    --vgtu-gray-light: #f8f9fa;
+    --vgtu-white: #ffffff;
+    --vgtu-danger: #dc3545;
+    --vgtu-success: #198754;
+    --vgtu-warning: #B99F6E;
+
+    /* Шрифты */
+    --font-heading: 'Montserrat', 'Segoe UI', Arial, sans-serif;
+    --font-body: 'Open Sans', 'Segoe UI', Arial, sans-serif;
+}
+
+/* --- Типографика --- */
+body {
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: #333;
+}
+
+h1, h2, h3, h4, h5, h6,
+.h1, .h2, .h3, .h4, .h5, .h6 {
+    font-family: var(--font-heading);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    color: var(--vgtu-blue);
+}
+
+h1, .h1 { font-size: 1.6rem; font-weight: 400; }
+h2, .h2 { font-size: 1.05rem; font-weight: 400; }
+h3, .h3 { font-size: 0.9rem; font-weight: 400; }
+h4, .h4 { font-size: 1.1rem; font-weight: 400; }
+h5, .h5 { font-size: 0.95rem; font-weight: 400; }
+
+.card-header strong,
+.card-header .fw-semibold {
+    font-family: var(--font-heading);
+}
+
+/* --- Двухуровневая шапка --- */
+.navbar-top-bar {
+    background-color: #ffffff;
+    border-bottom: 1px solid #D0D0D0;
+    padding: 0.75rem 0;
+    min-height: 84px;
+    display: flex;
+    align-items: center;
+}
+.navbar-top-logo {
+    height: 56px;
+    width: auto;
+    display: block;
+    margin-right: 1rem;
+}
+
+.navbar-top-title {
+    font-family: var(--font-heading);
+    font-size: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--vgtu-blue);
+}
+
+.navbar-top-user {
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    color: var(--vgtu-blue);
+}
+
+/* --- Навбар (уровень 2) --- */
+.navbar-vgtu {
+    background-color: var(--vgtu-blue) !important;
+    min-height: 48px;
+}
+
+.navbar-vgtu .navbar-brand,
+.navbar-vgtu .nav-link,
+.navbar-vgtu .navbar-text {
+    color: var(--vgtu-white) !important;
+    font-family: var(--font-heading);
+}
+
+.navbar-vgtu .navbar-brand {
+    font-weight: 400;
+    letter-spacing: 0.03em;
+}
+
+.navbar-vgtu .nav-link:hover {
+    color: var(--vgtu-gold) !important;
+}
+
+.navbar-vgtu .nav-link.active {
+    font-weight: 600;
+    border-bottom: 2px solid var(--vgtu-gold);
+}
+
+/* --- Боковое меню --- */
+.sidebar {
+    min-height: calc(100vh - 116px);
+    background-color: var(--vgtu-gray-light);
+    border-right: 1px solid var(--vgtu-gray-brand);
+}
+
+.sidebar .nav-link {
+    color: #333;
+    padding: 0.6rem 1rem;
+    border-radius: 0.25rem;
+    margin: 0.1rem 0.5rem;
+    font-family: var(--font-body);
+}
+
+.sidebar .nav-link:hover {
+    background-color: var(--vgtu-blue-light);
+    color: var(--vgtu-blue);
+}
+
+.sidebar .nav-link.active {
+    background-color: var(--vgtu-blue);
+    color: var(--vgtu-white);
+}
+
+.sidebar .nav-link i {
+    width: 20px;
+    text-align: center;
+    margin-right: 0.5rem;
+}
+
+/* --- Кнопки --- */
+.btn-vgtu {
+    background-color: var(--vgtu-blue);
+    border-color: var(--vgtu-blue);
+    color: var(--vgtu-white);
+    font-family: var(--font-heading);
+    font-size: 0.85rem;
+    letter-spacing: 0.02em;
+}
+
+.btn-vgtu:hover {
+    background-color: var(--vgtu-blue-dark);
+    border-color: var(--vgtu-blue-dark);
+    color: var(--vgtu-white);
+}
+
+.btn-outline-vgtu {
+    color: var(--vgtu-blue);
+    border-color: var(--vgtu-blue);
+    font-family: var(--font-heading);
+    font-size: 0.85rem;
+}
+
+.btn-outline-vgtu:hover {
+    background-color: var(--vgtu-blue);
+    color: var(--vgtu-white);
+}
+
+/* Акцентная кнопка — золотой/жёлтый */
+.btn-vgtu-gold {
+    background-color: var(--vgtu-gold);
+    border-color: var(--vgtu-gold);
+    color: var(--vgtu-blue);
+    font-family: var(--font-heading);
+    font-size: 0.85rem;
+}
+
+.btn-vgtu-gold:hover {
+    background-color: var(--vgtu-gold-dark);
+    border-color: var(--vgtu-gold-dark);
+    color: var(--vgtu-white);
+}
+
+/* --- Карточки --- */
+.card-vgtu {
+    border: 1px solid var(--vgtu-gray-brand);
+    border-top: 3px solid var(--vgtu-blue);
+}
+
+/* --- Бейджи статусов задач --- */
+.badge-assigned {
+    background-color: var(--vgtu-gray);
+    color: white;
+}
+
+.badge-in-progress {
+    background-color: var(--vgtu-blue);
+    color: white;
+}
+
+.badge-completed {
+    background-color: var(--vgtu-gold);
+    color: var(--vgtu-blue);
+}
+
+.badge-approved {
+    background-color: var(--vgtu-success);
+    color: white;
+}
+
+.badge-rejected {
+    background-color: var(--vgtu-danger);
+    color: white;
+}
+
+/* --- Прогресс-бары нагрузки --- */
+.progress-workload .progress-bar {
+    background-color: var(--vgtu-blue);
+}
+
+.progress-workload.overloaded .progress-bar {
+    background-color: var(--vgtu-danger);
+}
+
+/* --- Таблицы --- */
+.table-vgtu thead {
+    background-color: var(--vgtu-blue);
+    color: var(--vgtu-white);
+}
+
+.table-vgtu thead th {
+    border-color: var(--vgtu-blue-dark);
+    font-weight: 600;
+    font-family: var(--font-heading);
+    font-size: 0.85rem;
+    letter-spacing: 0.02em;
+}
+
+/* --- Страница входа --- */
+.login-container {
+    max-width: 420px;
+    margin: 80px auto;
+}
+
+.login-card {
+    border: none;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    border-radius: 0.5rem;
+}
+
+.login-header {
+    background-color: var(--vgtu-blue);
+    color: var(--vgtu-white);
+    border-radius: 0.5rem 0.5rem 0 0;
+    padding: 1.5rem;
+    text-align: center;
+}
+
+.login-header h4 {
+    color: var(--vgtu-white);
+    font-family: var(--font-heading);
+    text-transform: uppercase;
+    font-size: 1rem;
+    letter-spacing: 0.03em;
+}
+
+.login-header small {
+    color: var(--vgtu-gold);
+}
+
+.login-logo {
+    height: 64px;
+    width: auto;
+    margin-bottom: 0.75rem;
+}
+
+/* --- Утилиты --- */
+.text-vgtu {
+    color: var(--vgtu-blue) !important;
+}
+
+.text-vgtu-gold {
+    color: var(--vgtu-gold) !important;
+}
+
+.bg-vgtu {
+    background-color: var(--vgtu-blue) !important;
+}
+
+.bg-vgtu-light {
+    background-color: var(--vgtu-blue-light) !important;
+}
+
+.bg-vgtu-gold {
+    background-color: var(--vgtu-gold-light) !important;
+}
+
+/* --- Основной контент --- */
+.main-content {
+    padding: 1.5rem;
+    min-height: calc(100vh - 116px);
+}
+
+/* --- Подвал --- */
+.footer-vgtu {
+    background-color: var(--vgtu-gray-light);
+    border-top: 2px solid var(--vgtu-gray-brand);
+    padding: 0.75rem 0;
+    font-size: 0.85rem;
+    color: var(--vgtu-gray);
+    font-family: var(--font-body);
+}
+
+/* --- Фокус форм — золотой акцент --- */
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--vgtu-gold);
+    box-shadow: 0 0 0 0.2rem rgba(185, 159, 110, 0.25);
+}
+
+/* --- Карточки счётчиков на дашборде --- */
+.card .fs-2 {
+    font-family: var(--font-heading);
+    color: var(--vgtu-blue);
+}
+
+/* --- Переопределение Bootstrap кнопок --- */
+.btn-primary {
+    background-color: var(--vgtu-blue);
+    border-color: var(--vgtu-blue);
+    color: #fff;
+    font-family: var(--font-heading);
+    font-size: 0.85rem;
+    letter-spacing: 0.02em;
+}
+.btn-primary:hover, .btn-primary:focus, .btn-primary:active,
+.btn-primary:first-child:active {
+    background-color: var(--vgtu-blue-dark);
+    border-color: var(--vgtu-blue-dark);
+    color: #fff;
+}
+.btn-primary:focus-visible {
+    box-shadow: 0 0 0 0.25rem rgba(38,48,69,0.35);
+}
+.btn-outline-primary {
+    color: var(--vgtu-blue);
+    border-color: var(--vgtu-blue);
+    font-family: var(--font-heading);
+    font-size: 0.85rem;
+}
+.btn-outline-primary:hover {
+    background-color: var(--vgtu-blue);
+    border-color: var(--vgtu-blue);
+    color: #fff;
+}
+.btn-warning {
+    background-color: var(--vgtu-gold);
+    border-color: var(--vgtu-gold);
+    color: var(--vgtu-blue);
+    font-family: var(--font-heading);
+    font-size: 0.85rem;
+}
+.btn-warning:hover, .btn-warning:focus {
+    background-color: var(--vgtu-gold-dark);
+    border-color: var(--vgtu-gold-dark);
+    color: #fff;
+}
+.btn-outline-warning {
+    color: var(--vgtu-gold-dark);
+    border-color: var(--vgtu-gold);
+    font-family: var(--font-heading);
+    font-size: 0.85rem;
+}
+.btn-outline-warning:hover {
+    background-color: var(--vgtu-gold);
+    border-color: var(--vgtu-gold);
+    color: var(--vgtu-blue);
+}
+.btn-outline-secondary, .btn-outline-danger,
+.btn-success, .btn-outline-success, .btn-danger {
+    font-family: var(--font-heading);
+    font-size: 0.85rem;
+    letter-spacing: 0.02em;
+}
+
+/* --- Таблицы, бейджи, карточки --- */
+.table thead.table-light th,
+.table thead th {
+    font-family: var(--font-heading);
+    font-size: 0.8rem;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--vgtu-blue);
+    font-weight: 500;
+}
+.badge {
+    font-family: var(--font-heading);
+    font-size: 0.72rem;
+    letter-spacing: 0.02em;
+}
+.card-header {
+    font-family: var(--font-heading);
+    font-size: 0.875rem;
+    letter-spacing: 0.01em;
+}
+.sidebar .nav-link {
+    font-size: 0.875rem;
+}
+.main-content h1, .main-content h4 {
+    font-family: var(--font-heading);
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--vgtu-blue);
+}

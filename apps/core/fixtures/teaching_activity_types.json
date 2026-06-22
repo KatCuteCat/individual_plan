@@ -1,0 +1,142 @@
+[
+  {
+    "model": "core.teachingactivitytype",
+    "pk": 1,
+    "fields": {
+      "name": "Лекционные занятия",
+      "code": "LECTURE",
+      "sort_order": 10,
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.teachingactivitytype",
+    "pk": 2,
+    "fields": {
+      "name": "Лабораторные занятия",
+      "code": "LAB",
+      "sort_order": 20,
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.teachingactivitytype",
+    "pk": 3,
+    "fields": {
+      "name": "Практические занятия",
+      "code": "PRACTICE_LESSON",
+      "sort_order": 30,
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.teachingactivitytype",
+    "pk": 4,
+    "fields": {
+      "name": "Консультации",
+      "code": "CONSULTATION",
+      "sort_order": 40,
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.teachingactivitytype",
+    "pk": 5,
+    "fields": {
+      "name": "Самостоятельная работа под руководством преподавателя",
+      "code": "SUPERVISED_SELF_STUDY",
+      "sort_order": 50,
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.teachingactivitytype",
+    "pk": 6,
+    "fields": {
+      "name": "Зачёт",
+      "code": "CREDIT",
+      "sort_order": 60,
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.teachingactivitytype",
+    "pk": 7,
+    "fields": {
+      "name": "Дифференцированный зачёт",
+      "code": "GRADED_CREDIT",
+      "sort_order": 70,
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.teachingactivitytype",
+    "pk": 8,
+    "fields": {
+      "name": "Экзамен",
+      "code": "EXAM",
+      "sort_order": 80,
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.teachingactivitytype",
+    "pk": 9,
+    "fields": {
+      "name": "Курсовая работа",
+      "code": "COURSE_WORK",
+      "sort_order": 90,
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.teachingactivitytype",
+    "pk": 10,
+    "fields": {
+      "name": "Курсовой проект",
+      "code": "COURSE_PROJECT",
+      "sort_order": 100,
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.teachingactivitytype",
+    "pk": 11,
+    "fields": {
+      "name": "Руководство ВКР",
+      "code": "THESIS_SUPERVISION",
+      "sort_order": 110,
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.teachingactivitytype",
+    "pk": 12,
+    "fields": {
+      "name": "Защита ВКР",
+      "code": "THESIS_DEFENSE",
+      "sort_order": 120,
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.teachingactivitytype",
+    "pk": 13,
+    "fields": {
+      "name": "Прочая практика",
+      "code": "OTHER_PRACTICE",
+      "sort_order": 130,
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.teachingactivitytype",
+    "pk": 14,
+    "fields": {
+      "name": "Руководство аспирантами",
+      "code": "POSTGRADUATE_SUPERVISION",
+      "sort_order": 140,
+      "is_active": true
+    }
+  }
+]

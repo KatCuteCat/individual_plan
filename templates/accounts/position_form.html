@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block page_header %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">
+        <i class="bi bi-briefcase me-2"></i>{{ page_title }}
+    </h4>
+    <a href="{% url 'accounts:user_detail' target_user.pk %}{% if academic_year %}?year={{ academic_year.pk }}{% endif %}"
+       class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>К карточке
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card card-vgtu">
+            <div class="card-body">
+
+                <!-- Контекст -->
+                <div class="alert alert-light border mb-3">
+                    <div class="row mb-1">
+                        <div class="col-sm-4 text-muted">Преподаватель:</div>
+                        <div class="col-sm-8 fw-semibold">
+                            {{ target_user.full_name|default:target_user.username }}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-4 text-muted">Учебный год:</div>
+                        <div class="col-sm-8 fw-semibold">
+                            {% if academic_year %}{{ academic_year.name }}{% else %}—{% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <form method="post" novalidate>
+                    {% csrf_token %}
+
+                    {% if not is_edit %}
+                        <!-- При создании год передаётся скрытым полем -->
+                        <input type="hidden" name="academic_year"
+                               value="{{ academic_year.pk|default:'' }}">
+
+                        {% if all_years and all_years|length > 1 %}
+                        <div class="mb-3">
+                            <label class="form-label">Сменить учебный год</label>
+                            <div class="d-flex gap-2 flex-wrap">
+                                {% for y in all_years %}
+                                    <a href="{% url 'accounts:position_create' target_user.pk %}?year={{ y.pk }}"
+                                       class="btn btn-sm
+                                       {% if academic_year and y.pk == academic_year.pk %}btn-vgtu{% else %}btn-outline-secondary{% endif %}">
+                                        {{ y.name }}{% if y.is_active %} (активный){% endif %}
+                                    </a>
+                                {% endfor %}
+                            </div>
+                            <div class="form-text">Архивные годы в этом списке не показываются.</div>
+                        </div>
+                        {% endif %}
+                    {% endif %}
+
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <!-- Вид занятости и должность -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="id_employment_type" class="form-label">
+                                Вид занятости <span class="text-danger">*</span>
+                            </label>
+                            {{ form.employment_type }}
+                            {% if form.employment_type.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.employment_type.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_position" class="form-label">
+                                Должность <span class="text-danger">*</span>
+                            </label>
+                            {{ form.position }}
+                            {% if form.position.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.position.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Ставка -->
+                    <div class="mb-3">
+                        <label for="id_rate" class="form-label">Доля ставки</label>
+                        {{ form.rate }}
+                        {% if form.rate.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.rate.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">
+                            Обязательно для основного места и совместительств.
+                            Для почасовой — оставьте пустым.
+                        </div>
+                    </div>
+
+                    <!-- Активна -->
+                    <div class="mb-3 form-check">
+                        {{ form.is_active }}
+                        <label class="form-check-label" for="id_is_active">
+                            Позиция активна
+                        </label>
+                        <div class="form-text">
+                            Снимите флаг, если преподаватель в декрете, в творческом отпуске
+                            или позиция закрыта.
+                        </div>
+                    </div>
+
+                    <!-- Заметки -->
+                    <div class="mb-3">
+                        <label for="id_notes" class="form-label">Заметки</label>
+                        {{ form.notes }}
+                        {% if form.notes.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.notes.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <hr>
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'accounts:user_detail' target_user.pk %}{% if academic_year %}?year={{ academic_year.pk }}{% endif %}"
+                           class="btn btn-outline-secondary">
+                            Отмена
+                        </a>
+                        <button type="submit" class="btn btn-vgtu">
+                            <i class="bi bi-check-lg me-1"></i>{{ button_text }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

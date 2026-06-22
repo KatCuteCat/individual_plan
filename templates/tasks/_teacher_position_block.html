@@ -1,0 +1,340 @@
+{# Подзаголовок позиции #}
+<div class="mb-3 small text-muted">
+    <i class="bi bi-briefcase me-1"></i>
+    {{ block.position.get_employment_type_display }}
+    {% if not block.position.is_hourly %}
+        · {{ block.position.rate }} ст.
+    {% endif %}
+    · {{ block.position.position.name }}
+</div>
+
+{# Учебная работа (первая половина дня) #}
+{% include 'tasks/_teaching_load_block.html' with teaching_load_grouped=block.teaching_load_grouped teaching_load_total=block.teaching_load_total teaching_load_imported_at=block.teaching_load_imported_at %}
+
+{# Блок нагрузки #}
+<div class="row g-3 mb-4">
+
+    {# Общая нагрузка #}
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header fw-semibold">Общая нагрузка</div>
+            <div class="card-body">
+                {% if block.stats.max_total_hours > 0 %}
+                    {% widthratio block.stats.total_planned block.stats.max_total_hours 100 as pct_planned %}
+                    {% widthratio block.stats.total_actual block.stats.max_total_hours 100 as pct_actual %}
+                    <div class="d-flex justify-content-between small text-muted mb-1">
+                        <span>Плановые: {{ block.stats.total_planned|floatformat:0 }} ч.</span>
+                        <span>Лимит: {{ block.stats.max_total_hours }} ч.</span>
+                    </div>
+                    <div class="progress mb-2" style="height: 10px;">
+                        <div class="progress-bar {% if block.stats.is_overloaded %}bg-danger{% elif pct_planned|add:0 >= 90 %}bg-warning{% else %}bg-primary{% endif %}"
+                             style="width: {% if pct_planned > 100 %}100{% else %}{{ pct_planned }}{% endif %}%">
+                        </div>
+                    </div>
+                    {% if block.stats.total_actual > 0 %}
+                    <div class="d-flex justify-content-between small text-muted mb-1">
+                        <span>Фактические: {{ block.stats.total_actual|floatformat:0 }} ч.</span>
+                        <span>{{ pct_actual }}%</span>
+                    </div>
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar bg-success"
+                             style="width: {% if pct_actual > 100 %}100{% else %}{{ pct_actual }}{% endif %}%">
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if block.stats.is_overloaded %}
+                        <div class="text-danger small mt-2">
+                            <i class="bi bi-exclamation-triangle me-1"></i>Превышен лимит нагрузки
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <div class="text-muted small">
+                        Норма нагрузки не задана для должности «{{ block.position.position.name }}»
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {# Статистика по задачам #}
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header fw-semibold">Задачи</div>
+            <div class="card-body">
+                <div class="row text-center g-2">
+                    <div class="col-4">
+                        <div class="fs-4 fw-bold">{{ block.stats.tasks_count.total }}</div>
+                        <div class="text-muted small">Всего</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="fs-4 fw-bold text-warning">{{ block.stats.tasks_count.completed }}</div>
+                        <div class="text-muted small">Ожидают</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="fs-4 fw-bold text-success">{{ block.stats.tasks_count.approved }}</div>
+                        <div class="text-muted small">Подтверждено</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{# Нагрузка по категориям #}
+<div class="card shadow-sm mb-4">
+    <div class="card-header fw-semibold">
+        <i class="bi bi-grid me-1"></i> Нагрузка по категориям
+        {% if block.stats.second_half_hours is not None %}
+        <span class="fw-normal text-muted ms-2 small">
+            Вторая половина дня: {{ block.stats.second_half_hours|floatformat:0 }} ч.
+        </span>
+        {% endif %}
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Категория</th>
+                        <th class="text-center">Задач</th>
+                        <th class="text-center">План (ч.)</th>
+                        <th class="text-center" style="min-width: 100px;">Диапазон</th>
+                        <th style="min-width: 130px;">Прогресс</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in block.stats.by_category %}
+                    <tr {% if item.is_above_max %}class="table-danger"{% elif item.is_below_min %}class="table-warning"{% elif item.count == 0 %}class="text-muted"{% endif %}>
+                        <td class="small">{{ item.category.name }}</td>
+                        <td class="text-center small">{{ item.count }}</td>
+                        <td class="text-center small">{{ item.planned|floatformat:0 }}</td>
+                        <td class="text-center small text-nowrap">
+                            {% if item.min_hours is not None %}
+                                <span {% if item.regulation_point %}title="Пункт приказа: {{ item.regulation_point }}" data-bs-toggle="tooltip"{% endif %}>
+                                    {{ item.min_hours|floatformat:0 }}–{{ item.max_hours|floatformat:0 }}
+                                    {% if item.regulation_point %}<i class="bi bi-question-circle text-muted" style="font-size: 0.7rem;"></i>{% endif %}
+                                </span>
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if item.max_hours is not None and item.max_hours > 0 %}
+                                {% widthratio item.planned item.max_hours 100 as fill_pct %}
+                                <div class="d-flex align-items-center gap-1">
+                                    <div class="progress flex-grow-1" style="height: 8px;">
+                                        <div class="progress-bar {% if item.is_above_max %}bg-danger{% elif item.is_below_min %}bg-warning{% else %}bg-primary{% endif %}"
+                                             style="width: {% if fill_pct > 100 %}100{% else %}{{ fill_pct }}{% endif %}%;"></div>
+                                    </div>
+                                    <span class="small text-nowrap">{{ fill_pct }}%</span>
+                                </div>
+                            {% else %}
+                                <span class="text-muted small">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                {% if block.stats.second_half_hours is not None %}
+                <tfoot>
+                    {# 5 колонок: Категория | Задач | План | Диапазон+Прогресс (colspan=2) #}
+                    <tr {% if block.stats.second_half_overflow %}class="table-danger"{% endif %}>
+                        <td class="small fw-semibold">Σ по категориям</td>
+                        <td></td>
+                        <td class="text-center small fw-semibold text-nowrap">
+                            {{ block.stats.second_half_planned|floatformat:0 }} / {{ block.stats.second_half_hours|floatformat:0 }} ч.
+                        </td>
+                        <td colspan="2" class="small">
+                            {% if block.stats.second_half_overflow %}
+                            <span class="text-danger fw-semibold">
+                                <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                                Превышение второй половины дня на {{ block.stats.second_half_overflow|floatformat:0 }} ч.
+                            </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </tfoot>
+                {% endif %}
+            </table>
+        </div>
+    </div>
+    {% if block.stats.second_half_hours is not None %}
+    <div class="card-footer bg-transparent small text-muted">
+        <i class="bi bi-square-fill text-danger me-1" style="font-size: 0.6rem;"></i>Превышен макс.
+        <i class="bi bi-square-fill text-warning me-1 ms-2" style="font-size: 0.6rem;"></i>Ниже мин.
+    </div>
+    {% endif %}
+</div>
+
+{# Таблица задач #}
+<div class="card shadow-sm">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-semibold">Задачи преподавателя</span>
+        <form method="get" class="d-flex align-items-center gap-2">
+            {% if academic_year %}
+            <input type="hidden" name="year" value="{{ academic_year.pk }}">
+            {% endif %}
+            <select name="status" class="form-select form-select-sm" style="max-width: 160px;"
+                    onchange="this.form.submit()">
+                <option value="">— Все статусы —</option>
+                {% for value, label in status_choices %}
+                    <option value="{{ value }}"
+                        {% if current_status == value %}selected{% endif %}>
+                        {{ label }}
+                    </option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
+    <div class="card-body p-0">
+        {% if block.tasks %}
+        <div class="table-responsive">
+            <table class="table table-hover table-sm mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Задача</th>
+                        <th>Категория</th>
+                        <th class="text-center">Часы</th>
+                        <th>Срок</th>
+                        <th>Статус</th>
+                        <th class="text-end">Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for task in block.tasks %}
+                    <tr>
+                        <td class="small fw-semibold">{{ task.title }}</td>
+                        <td class="small text-muted">{{ task.category.name }}</td>
+                        <td class="text-center small text-nowrap">
+                            {% include 'tasks/_task_hours_cell.html' with task=task %}
+                        </td>
+                        <td class="small text-nowrap">{{ task.end_date|date:"d.m.Y" }}</td>
+                        <td>
+                            {% if task.status == 'assigned' %}
+                                <span class="badge bg-secondary">Назначена</span>
+                            {% elif task.status == 'in_progress' %}
+                                <span class="badge bg-info text-dark">В работе</span>
+                            {% elif task.status == 'completed' %}
+                                <span class="badge bg-warning text-dark">На проверке</span>
+                            {% elif task.status == 'approved' %}
+                                <span class="badge bg-success">Подтверждена</span>
+                            {% elif task.status == 'pending_approval' %}
+                                <span class="badge bg-warning text-dark">
+                                    <i class="bi bi-hourglass-split me-1"></i>Ожидает утверждения
+                                </span>
+                            {% elif task.status == 'declined' %}
+                                <span class="badge bg-dark">Не утверждена</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end text-nowrap">
+                            {% if not is_archive_view and task.is_editable %}
+                            <a href="{% url 'tasks:task_edit' task.pk %}"
+                               class="btn btn-sm btn-outline-secondary py-0 px-2">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            {% if task.status == 'assigned' %}
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-danger py-0 px-2 ms-1"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#taskDeleteModal-{{ task.pk }}"
+                                    title="Удалить задачу">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                            {% endif %}
+                            {% if task.status == 'completed' or task.status == 'approved' %}
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-info py-0 px-2 ms-1"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#reportModal-{{ task.pk }}"
+                                    title="Отчёт">
+                                <i class="bi bi-file-text"></i>
+                            </button>
+                            {% endif %}
+                            {% else %}
+                            {% if task.status == 'completed' or task.status == 'approved' %}
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-info py-0 px-2"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#reportModal-{{ task.pk }}"
+                                    title="Отчёт">
+                                <i class="bi bi-file-text"></i>
+                            </button>
+                            {% else %}
+                            <span class="text-muted small">только чтение</span>
+                            {% endif %}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {# Модалки отчётов — вне таблицы, чтобы не наследовать стили ячеек #}
+        {% for task in block.tasks %}
+            {% if task.status == 'completed' or task.status == 'approved' %}
+                {% include 'tasks/_task_report_modal.html' with task=task is_archive_view=is_archive_view %}
+            {% endif %}
+        {% endfor %}
+
+        {# Модалки удаления assigned-задач #}
+        {% if not is_archive_view %}
+        {% for task in block.tasks %}
+            {% if task.status == 'assigned' %}
+            <div class="modal fade" id="taskDeleteModal-{{ task.pk }}"
+                 tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                <i class="bi bi-exclamation-triangle text-danger me-1"></i>
+                                Удаление задачи
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                    aria-label="Закрыть"></button>
+                        </div>
+                        <div class="modal-body text-start">
+                            <p>Вы собираетесь удалить задачу:</p>
+                            <p class="fw-semibold mb-1">«{{ task.title }}»</p>
+                            <p class="small text-muted mb-3">
+                                Исполнитель:
+                                {{ task.assignee.user.full_name|default:task.assignee.user.username }}
+                            </p>
+                            <div class="alert alert-warning small mb-0">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Удалить можно, потому что преподаватель ещё не взял
+                                задачу в работу. Восстановить задачу после удаления
+                                будет невозможно.
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary"
+                                    data-bs-dismiss="modal">
+                                Отмена
+                            </button>
+                            <form method="post"
+                                  action="{% url 'tasks:task_delete' task.pk %}"
+                                  class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="bi bi-trash me-1"></i>
+                                    Удалить задачу
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        {% endfor %}
+        {% endif %}
+
+        {% else %}
+        <div class="text-center text-muted py-4">
+            <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+            Задач нет{% if current_status %} с выбранным статусом{% endif %}.
+        </div>
+        {% endif %}
+    </div>
+</div>

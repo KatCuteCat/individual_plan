@@ -1,0 +1,589 @@
+[
+  {
+    "model": "core.position",
+    "pk": 1,
+    "fields": {
+      "name": "Декан",
+      "code": "DEAN"
+    }
+  },
+  {
+    "model": "core.position",
+    "pk": 2,
+    "fields": {
+      "name": "Заведующий кафедрой",
+      "code": "HEAD_OF_DEPARTMENT"
+    }
+  },
+  {
+    "model": "core.position",
+    "pk": 3,
+    "fields": {
+      "name": "Профессор",
+      "code": "PROFESSOR"
+    }
+  },
+  {
+    "model": "core.position",
+    "pk": 4,
+    "fields": {
+      "name": "Доцент",
+      "code": "ASSOCIATE_PROFESSOR"
+    }
+  },
+  {
+    "model": "core.position",
+    "pk": 5,
+    "fields": {
+      "name": "Старший преподаватель",
+      "code": "SENIOR_TEACHER"
+    }
+  },
+  {
+    "model": "core.position",
+    "pk": 6,
+    "fields": {
+      "name": "Ассистент",
+      "code": "ASSISTANT"
+    }
+  },
+  {
+    "model": "core.taskcategory",
+    "pk": 1,
+    "fields": {
+      "name": "Учебная работа",
+      "code": "TEACHING",
+      "description": "Проведение лекций, практических и лабораторных занятий, консультаций, зачётов, экзаменов, руководство курсовыми и дипломными работами.",
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.taskcategory",
+    "pk": 2,
+    "fields": {
+      "name": "Учебно-методическая работа",
+      "code": "EDUCATIONAL_METHODICAL",
+      "description": "Разработка учебных программ, методических указаний, учебных пособий, обновление курсов.",
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.taskcategory",
+    "pk": 3,
+    "fields": {
+      "name": "Научно-исследовательская работа",
+      "code": "SCIENTIFIC",
+      "description": "Проведение научных исследований, публикация статей, участие в конференциях, руководство НИР студентов.",
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.taskcategory",
+    "pk": 4,
+    "fields": {
+      "name": "Организационно-методическая работа",
+      "code": "ORGANIZATIONAL",
+      "description": "Работа в комиссиях, советах, организация мероприятий кафедры, профориентационная работа.",
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.taskcategory",
+    "pk": 5,
+    "fields": {
+      "name": "Воспитательная работа",
+      "code": "EDUCATIONAL_WORK",
+      "description": "Кураторство, работа со студенческими группами, участие в воспитательных мероприятиях.",
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.academicyear",
+    "pk": 1,
+    "fields": {
+      "name": "2025-2026",
+      "start_date": "2025-09-01",
+      "end_date": "2026-06-30",
+      "is_active": true,
+      "is_archived": false
+    }
+  },
+  {
+    "model": "core.positionworkload",
+    "pk": 1,
+    "fields": {
+      "position": 1,
+      "academic_year": 1,
+      "max_teaching_hours": 600,
+      "max_total_hours": 1550
+    }
+  },
+  {
+    "model": "core.positionworkload",
+    "pk": 2,
+    "fields": {
+      "position": 2,
+      "academic_year": 1,
+      "max_teaching_hours": 800,
+      "max_total_hours": 1550
+    }
+  },
+  {
+    "model": "core.positionworkload",
+    "pk": 3,
+    "fields": {
+      "position": 3,
+      "academic_year": 1,
+      "max_teaching_hours": 800,
+      "max_total_hours": 1550
+    }
+  },
+  {
+    "model": "core.positionworkload",
+    "pk": 4,
+    "fields": {
+      "position": 4,
+      "academic_year": 1,
+      "max_teaching_hours": 850,
+      "max_total_hours": 1550
+    }
+  },
+  {
+    "model": "core.positionworkload",
+    "pk": 5,
+    "fields": {
+      "position": 5,
+      "academic_year": 1,
+      "max_teaching_hours": 900,
+      "max_total_hours": 1550
+    }
+  },
+  {
+    "model": "core.positionworkload",
+    "pk": 6,
+    "fields": {
+      "position": 6,
+      "academic_year": 1,
+      "max_teaching_hours": 900,
+      "max_total_hours": 1550
+    }
+  },
+  {
+    "model": "core.worktype",
+    "pk": 1,
+    "fields": {
+      "name": "Подготовка к лекционным, практическим и лабораторным занятиям",
+      "category": 2,
+      "max_hours": 1,
+      "unit_description": "до 1 ч. на час занятий",
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.worktype",
+    "pk": 2,
+    "fields": {
+      "name": "Разработка нового курса лекций",
+      "category": 2,
+      "max_hours": 5,
+      "unit_description": "до 5 ч. на час занятий",
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.worktype",
+    "pk": 3,
+    "fields": {
+      "name": "Подготовка к изданию учебников, пособий, конспектов, лабораторных практикумов",
+      "category": 2,
+      "max_hours": 40,
+      "unit_description": "за 1 печатный лист",
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.worktype",
+    "pk": 4,
+    "fields": {
+      "name": "Разработка учебных планов по направлениям подготовки",
+      "category": 2,
+      "max_hours": 100,
+      "unit_description": "до 100 ч.",
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.worktype",
+    "pk": 5,
+    "fields": {
+      "name": "Разработка комплекта документов по образовательной программе",
+      "category": 2,
+      "max_hours": 100,
+      "unit_description": "до 100 ч. на всех участников",
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.worktype",
+    "pk": 6,
+    "fields": {
+      "name": "Разработка рабочих программ дисциплин",
+      "category": 2,
+      "max_hours": 48,
+      "unit_description": "на одну дисциплину",
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.worktype",
+    "pk": 7,
+    "fields": {
+      "name": "Разработка программы практики",
+      "category": 2,
+      "max_hours": 30,
+      "unit_description": "на одну программу",
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.worktype",
+    "pk": 8,
+    "fields": {
+      "name": "Разработка программы государственной итоговой аттестации",
+      "category": 2,
+      "max_hours": 100,
+      "unit_description": "до 100 ч. на всех участников",
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.worktype",
+    "pk": 9,
+    "fields": {
+      "name": "Актуализация рабочих программ дисциплин / практик / ГИА",
+      "category": 2,
+      "max_hours": 30,
+      "unit_description": "до 30 ч.",
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.worktype",
+    "pk": 10,
+    "fields": {
+      "name": "Постановка новых лабораторных работ и обновление действующих",
+      "category": 2,
+      "max_hours": 25,
+      "unit_description": "на одну работу",
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.worktype",
+    "pk": 11,
+    "fields": {
+      "name": "Рецензирование учебников и методических материалов",
+      "category": 2,
+      "max_hours": 10,
+      "unit_description": "за 1 печатный лист",
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.worktype",
+    "pk": 12,
+    "fields": {
+      "name": "Индивидуальная работа со студентами по иностранной литературе",
+      "category": 2,
+      "max_hours": 10,
+      "unit_description": "на одного студента",
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.worktype",
+    "pk": 13,
+    "fields": {
+      "name": "Работа в редколлегиях научных журналов",
+      "category": 2,
+      "max_hours": 30,
+      "unit_description": "в год",
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.worktype",
+    "pk": 14,
+    "fields": {
+      "name": "Работа в учебно-методическом совете",
+      "category": 2,
+      "max_hours": 5,
+      "unit_description": "до 5 ч.",
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.worktype",
+    "pk": 15,
+    "fields": {
+      "name": "Выполнение научных исследований с подготовкой отчёта по г/б НИР",
+      "category": 3,
+      "max_hours": 100,
+      "unit_description": "если не оплачивается",
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.worktype",
+    "pk": 16,
+    "fields": {
+      "name": "Выполнение научных экспериментов по утверждённой теме",
+      "category": 3,
+      "max_hours": 10,
+      "unit_description": "на одну работу",
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.worktype",
+    "pk": 17,
+    "fields": {
+      "name": "Рецензирование отчётов НИР, научных публикаций, диссертаций",
+      "category": 3,
+      "max_hours": 10,
+      "unit_description": "на один вид",
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.worktype",
+    "pk": 18,
+    "fields": {
+      "name": "Подготовка статей в международные, всероссийские, региональные издания",
+      "category": 3,
+      "max_hours": 70,
+      "unit_description": "на одну статью",
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.worktype",
+    "pk": 19,
+    "fields": {
+      "name": "Подготовка докладов на конференции",
+      "category": 3,
+      "max_hours": 25,
+      "unit_description": "на один доклад",
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.worktype",
+    "pk": 20,
+    "fields": {
+      "name": "Участие в конкурсах грантов и целевых научно-технических программ",
+      "category": 3,
+      "max_hours": 40,
+      "unit_description": "на одно мероприятие",
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.worktype",
+    "pk": 21,
+    "fields": {
+      "name": "Подготовка монографии",
+      "category": 3,
+      "max_hours": 250,
+      "unit_description": "за одну работу",
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.worktype",
+    "pk": 22,
+    "fields": {
+      "name": "Руководство НИРС (статьи, доклады, патенты студентов)",
+      "category": 3,
+      "max_hours": 30,
+      "unit_description": "до 30 ч.",
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.worktype",
+    "pk": 23,
+    "fields": {
+      "name": "Участие в работе диссертационного совета",
+      "category": 3,
+      "max_hours": 20,
+      "unit_description": "в год",
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.worktype",
+    "pk": 24,
+    "fields": {
+      "name": "Участие в работе научно-методических семинаров кафедры",
+      "category": 3,
+      "max_hours": 20,
+      "unit_description": "в год",
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.worktype",
+    "pk": 25,
+    "fields": {
+      "name": "Привлечение студентов к научным исследованиям",
+      "category": 3,
+      "max_hours": 20,
+      "unit_description": "до 20 ч.",
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.worktype",
+    "pk": 26,
+    "fields": {
+      "name": "Участие в работе совета факультета, учёном совете университета",
+      "category": 4,
+      "max_hours": 20,
+      "unit_description": "на каждый вид",
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.worktype",
+    "pk": 27,
+    "fields": {
+      "name": "Работа по профориентации и привлечению абитуриентов",
+      "category": 4,
+      "max_hours": 25,
+      "unit_description": "в год",
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.worktype",
+    "pk": 28,
+    "fields": {
+      "name": "Работа по взаимодействию с работодателями, трудоустройству выпускников",
+      "category": 4,
+      "max_hours": 30,
+      "unit_description": "в год",
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.worktype",
+    "pk": 29,
+    "fields": {
+      "name": "Участие в экзаменационной комиссии, жюри олимпиад",
+      "category": 4,
+      "max_hours": 6,
+      "unit_description": "за рабочий день",
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.worktype",
+    "pk": 30,
+    "fields": {
+      "name": "Работа в приёмной комиссии",
+      "category": 4,
+      "max_hours": 150,
+      "unit_description": "до 150 ч.",
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.worktype",
+    "pk": 31,
+    "fields": {
+      "name": "Работа в качестве куратора группы (курса)",
+      "category": 5,
+      "max_hours": 100,
+      "unit_description": "до 100 ч.",
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.worktype",
+    "pk": 32,
+    "fields": {
+      "name": "Организация и сопровождение социально значимых студенческих проектов, конкурсов, фестивалей",
+      "category": 5,
+      "max_hours": 30,
+      "unit_description": "до 30 ч.",
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.worktype",
+    "pk": 33,
+    "fields": {
+      "name": "Организация участия студентов в мероприятиях городского, регионального, всероссийского, международного уровней",
+      "category": 5,
+      "max_hours": 30,
+      "unit_description": "до 30 ч.",
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.worktype",
+    "pk": 34,
+    "fields": {
+      "name": "Проведение культурно-массовых, физкультурно-спортивных, научно-просветительских мероприятий",
+      "category": 5,
+      "max_hours": 20,
+      "unit_description": "на одно мероприятие",
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.worktype",
+    "pk": 35,
+    "fields": {
+      "name": "Разработка и реализация проектов по профилактике зависимостей, межэтническим отношениям",
+      "category": 5,
+      "max_hours": 20,
+      "unit_description": "до 20 ч.",
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.worktype",
+    "pk": 36,
+    "fields": {
+      "name": "Разработка и реализация проектов по пропаганде физической культуры и здорового образа жизни",
+      "category": 5,
+      "max_hours": 20,
+      "unit_description": "до 20 ч.",
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.worktype",
+    "pk": 37,
+    "fields": {
+      "name": "Организация и проведение мероприятий в студенческих общежитиях",
+      "category": 5,
+      "max_hours": 20,
+      "unit_description": "за одно мероприятие",
+      "is_active": true
+    }
+  },
+  {
+    "model": "core.worktype",
+    "pk": 38,
+    "fields": {
+      "name": "Участие в мониторингах по интересам и потребностям студентов",
+      "category": 5,
+      "max_hours": 20,
+      "unit_description": "до 20 ч.",
+      "is_active": true
+    }
+  }
+]

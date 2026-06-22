@@ -1,0 +1,197 @@
+{% extends 'base.html' %}
+
+{% block title %}Преподаватели{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-0">Преподаватели</h1>
+        {% if academic_year %}
+            <span class="text-muted small">Учебный год: {{ academic_year.name }}</span>
+        {% endif %}
+    </div>
+    <a href="{% url 'tasks:task_create' %}" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1"></i>Создать задачу
+    </a>
+</div>
+
+{% if is_archive_view %}
+<div class="alert alert-secondary mb-3">
+    <i class="bi bi-archive me-1"></i>
+    Просмотр архивного года «{{ academic_year.name }}».
+    Все данные доступны только для чтения.
+</div>
+{% endif %}
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body py-2">
+        <form method="get" class="d-flex align-items-center gap-3">
+            <label class="form-label mb-0 fw-semibold text-nowrap">Учебный год:</label>
+            <select name="year" class="form-select form-select-sm" style="max-width: 220px;"
+                    onchange="this.form.submit()">
+                {% for year in all_years %}
+                    <option value="{{ year.pk }}"
+                        {% if academic_year and academic_year.pk == year.pk %}selected{% endif %}>
+                        {{ year.name }}
+                        {% if year.is_active %} (активный){% endif %}
+                        {% if year.is_archived %} (архив){% endif %}
+                    </option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
+</div>
+
+{% if not academic_year %}
+<div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle me-2"></i>
+    Нет активного учебного года. Статистика нагрузки недоступна.
+</div>
+{% endif %}
+
+{% if teachers_grouped %}
+    {% for bucket in teachers_grouped %}
+    <div class="card shadow-sm mb-3">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <div>
+                <span class="fw-semibold">
+                    {{ bucket.user.full_name|default:bucket.user.username }}
+                </span>
+                {% if bucket.positions|length > 1 %}
+                    <span class="badge bg-secondary ms-2">
+                        позиций: {{ bucket.positions|length }}
+                    </span>
+                {% endif %}
+                {% if bucket.has_overload %}
+                    <span class="badge bg-danger ms-1">
+                        <i class="bi bi-exclamation-triangle"></i> перегрузка
+                    </span>
+                {% endif %}
+                {% if bucket.has_category_violations %}
+                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle ms-1"
+                          title="Есть категории с превышением максимума">
+                        <i class="bi bi-exclamation-triangle"></i> превышение по категории
+                    </span>
+                {% endif %}
+                {% if bucket.has_category_below_min %}
+                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle ms-1"
+                          title="Есть категории с недобором минимума">
+                        <i class="bi bi-arrow-down-circle"></i> недобор по категории
+                    </span>
+                {% endif %}
+            </div>
+            <div class="text-muted small">
+                Всего: <span class="fw-semibold">{{ bucket.total_planned|floatformat:0 }}</span>
+                {% if bucket.total_max_hours > 0 %}
+                    / {{ bucket.total_max_hours }} ч.
+                {% else %}
+                    ч.
+                {% endif %}
+                · задач: {{ bucket.total_tasks }}
+                <a href="{% url 'tasks:teacher_card' bucket.user.pk %}{% if academic_year %}?year={{ academic_year.pk }}{% endif %}"
+                   class="btn btn-sm btn-outline-secondary ms-2">
+                    <i class="bi bi-person-lines-fill me-1"></i>Карточка
+                </a>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Позиция</th>
+                        <th>Должность</th>
+                        <th class="text-center">Задач</th>
+                        <th style="min-width: 220px;">Нагрузка</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in bucket.positions %}
+                    <tr>
+                        <td class="small">
+                            {{ item.teacher_position.get_employment_type_display }}
+                            {% if not item.teacher_position.is_hourly %}
+                                <span class="text-muted">·
+                                    {{ item.teacher_position.rate|floatformat:"-2" }} ст.
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td class="text-muted small">
+                            {{ item.teacher_position.position.name }}
+                            {% if item.teacher_position.user.academic_title %}
+                                <span class="text-muted">
+                                    ({{ item.teacher_position.user.academic_title|lower }})
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-light text-dark border">
+                                {{ item.tasks_count }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if item.max_total_hours > 0 %}
+                                {% widthratio item.total_planned item.max_total_hours 100 as pct %}
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="progress flex-grow-1" style="height: 8px;">
+                                        <div class="progress-bar
+                                            {% if item.is_overloaded %}bg-danger
+                                            {% elif pct|add:0 >= 90 %}bg-warning
+                                            {% else %}bg-success{% endif %}"
+                                            style="width: {% if pct > 100 %}100{% else %}{{ pct }}{% endif %}%">
+                                        </div>
+                                    </div>
+                                    <span class="text-nowrap small
+                                        {% if item.is_overloaded %}text-danger fw-semibold{% endif %}">
+                                        {{ item.total_planned|floatformat:0 }}/{{ item.max_total_hours }}
+                                    </span>
+                                </div>
+                                {# Бейджи нарушений по категориям #}
+                                {% if item.category_violations_count > 0 or item.category_below_min_count > 0 %}
+                                <div class="mt-1 d-flex flex-wrap gap-1" style="font-size: 0.7rem;">
+                                    {% if item.category_violations_count > 0 %}
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle"
+                                          title="Категорий с превышением максимума">
+                                        <i class="bi bi-exclamation-triangle me-1"></i>
+                                        {{ item.category_violations_count }} прев.
+                                    </span>
+                                    {% endif %}
+                                    {% if item.category_below_min_count > 0 %}
+                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle"
+                                          title="Категорий с недобором минимума">
+                                        <i class="bi bi-arrow-down-circle me-1"></i>
+                                        {{ item.category_below_min_count }} недоб.
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                            {% elif item.teacher_position.is_hourly %}
+                                <span class="text-muted small">
+                                    <i class="bi bi-mortarboard me-1"></i>
+                                    Учебная нагрузка из 1С:
+                                    <span class="fw-semibold text-dark">
+                                        {{ item.teacher_position.teaching_hours|floatformat:"-2" }} ч.
+                                    </span>
+                                    <span class="badge bg-light text-muted border ms-1">только 1-я половина</span>
+                                </span>
+                            {% else %}
+                                <span class="text-muted small">
+                                    {{ item.total_planned|floatformat:0 }} ч. (норма не задана)
+                                </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endfor %}
+{% elif academic_year %}
+    <div class="card shadow-sm">
+        <div class="card-body text-center text-muted py-5">
+            Преподаватели с позициями в учебном году
+            «{{ academic_year.name }}» не найдены.
+        </div>
+    </div>
+{% endif %}
+{% endblock %}

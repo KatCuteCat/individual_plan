@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ teacher.full_name|default:teacher.username }}{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="{% url 'tasks:teacher_list' %}" class="text-decoration-none text-muted">
+        <i class="bi bi-arrow-left me-1"></i>Назад к списку преподавателей
+    </a>
+</div>
+
+{# Шапка карточки #}
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h4 class="mb-1">{{ teacher.full_name|default:teacher.username }}</h4>
+                {% if teacher.academic_title %}
+                    <div class="text-muted small">{{ teacher.academic_title }}</div>
+                {% endif %}
+                {% if positions %}
+                    <div class="mt-2">
+                        {% for pos in positions %}
+                            <span class="badge bg-light text-dark border me-1 mb-1">
+                                {{ pos.display_label }}
+                            </span>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-muted small">Позиций в этом году нет</div>
+                {% endif %}
+                {% if teacher.email %}
+                    <div class="small text-muted mt-1">
+                        <i class="bi bi-envelope me-1"></i>{{ teacher.email }}
+                    </div>
+                {% endif %}
+            </div>
+            <div class="col-md-6 text-md-end mt-3 mt-md-0">
+                {% if not is_archive_view %}
+                <a href="{% url 'tasks:task_create' %}?assignee={{ teacher.pk }}"
+                   class="btn btn-primary btn-sm">
+                    <i class="bi bi-plus-lg me-1"></i>Создать задачу
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Переключатель учебного года #}
+<div class="card shadow-sm mb-4">
+    <div class="card-body py-2">
+        <form method="get" class="d-flex align-items-center gap-3">
+            <label class="form-label mb-0 fw-semibold text-nowrap">Учебный год:</label>
+            <select name="year" class="form-select form-select-sm" style="max-width: 200px;"
+                    onchange="this.form.submit()">
+                {% for year in all_years %}
+                    <option value="{{ year.pk }}"
+                        {% if academic_year and academic_year.pk == year.pk %}selected{% endif %}>
+                        {{ year.name }}{% if year.is_active %} (активный){% endif %}
+                    </option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
+</div>
+
+{% if academic_year and position_blocks %}
+
+    {% if has_multiple_positions %}
+    {# === Несколько позиций — Bootstrap-табы === #}
+    <ul class="nav nav-tabs mb-4" id="positionsTab" role="tablist">
+        {% for block in position_blocks %}
+        <li class="nav-item" role="presentation">
+            <button class="nav-link {% if forloop.first %}active{% endif %}"
+                    id="{{ block.tab_id }}-tab"
+                    data-bs-toggle="tab"
+                    data-bs-target="#{{ block.tab_id }}"
+                    type="button" role="tab">
+                {{ block.position.get_employment_type_display }}
+                {% if not block.position.is_hourly %}
+                    <span class="text-muted small ms-1">{{ block.position.rate }} ст.</span>
+                {% endif %}
+            </button>
+        </li>
+        {% endfor %}
+    </ul>
+
+    <div class="tab-content" id="positionsTabContent">
+        {% for block in position_blocks %}
+        <div class="tab-pane fade {% if forloop.first %}show active{% endif %}"
+             id="{{ block.tab_id }}"
+             role="tabpanel">
+            {% include 'tasks/_teacher_position_block.html' with block=block %}
+        </div>
+        {% endfor %}
+    </div>
+
+    {% else %}
+    {# === Одна позиция — без табов === #}
+    {% for block in position_blocks %}
+        {% include 'tasks/_teacher_position_block.html' with block=block %}
+    {% endfor %}
+    {% endif %}
+
+{% elif academic_year %}
+    <div class="alert alert-warning">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        У преподавателя нет позиций в этом учебном году.
+    </div>
+{% else %}
+<div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle me-2"></i>
+    Нет активного учебного года.
+</div>
+{% endif %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function(el) { return new bootstrap.Tooltip(el); });
+    });
+</script>
+{% endblock %}
+{% endblock %}

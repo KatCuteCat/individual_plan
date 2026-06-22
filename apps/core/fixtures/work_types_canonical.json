@@ -1,0 +1,316 @@
+{
+  "_comment": "Канонический справочник видов работ (WorkType) по приказу ВГТУ «Нормы времени...», разделы 5.1-5.4. Источник: /mnt/project/нормы_времени_ВГТУ.docx. ВАЖНО: формулировки name приведены ДОСЛОВНО как в приказе. Самая длинная (5.1.3) — 344 символа, что превышает текущее WorkType.name max_length=255. Перед загрузкой данных нужно сделать миграцию AlterField на name -> max_length=500 (или TextField). Категория указывается через код TaskCategory.code: EDUCATIONAL_METHODICAL / SCIENTIFIC / ORGANIZATIONAL / EDUCATIONAL_WORK. Поле is_active=true для всех. unit_description содержит ТОЛЬКО единицу измерения.",
+  "_total": 38,
+  "_max_name_length": 344,
+  "_required_model_change": "WorkType.name: CharField(max_length=255) -> CharField(max_length=500). См. миграцию в брифе.",
+  "work_types": [
+    {
+      "regulation_point": "5.1.1",
+      "category_code": "EDUCATIONAL_METHODICAL",
+      "name": "Подготовка к лекционным, практическим и лабораторным занятиям",
+      "max_hours": 900,
+      "unit_description": "на 1 час занятий",
+      "is_per_unit": false
+    },
+    {
+      "regulation_point": "5.1.2",
+      "category_code": "EDUCATIONAL_METHODICAL",
+      "name": "Разработка нового курса лекций",
+      "max_hours": 500,
+      "unit_description": "до 5 ч. на 1 час занятий",
+      "is_per_unit": false
+    },
+    {
+      "regulation_point": "5.1.3",
+      "category_code": "EDUCATIONAL_METHODICAL",
+      "name": "Подготовка к изданию: учебников / электронных учебников; учебных пособий, учебно-методических пособий; конспектов лекций; сборников упражнений и задач; лабораторных практикумов; методических материалов по самостоятельной работе студентов, выполнению курсовых проектов (работ) и выпускных квалификационных работ, в том числе на иностранном языке",
+      "max_hours": 40,
+      "unit_description": "за 1 печатный лист",
+      "is_per_unit": true
+    },
+    {
+      "regulation_point": "5.1.4",
+      "category_code": "EDUCATIONAL_METHODICAL",
+      "name": "Разработка учебных планов по направлениям подготовки и специальностям",
+      "max_hours": 100,
+      "unit_description": "за один план",
+      "is_per_unit": true
+    },
+    {
+      "regulation_point": "5.1.5",
+      "category_code": "EDUCATIONAL_METHODICAL",
+      "name": "Разработка комплекта документов по основной образовательной программе: основные характеристики, взаимодействие с работодателем по экспертизе программы",
+      "max_hours": 100,
+      "unit_description": "в год на всех участников",
+      "is_per_unit": false
+    },
+    {
+      "regulation_point": "5.1.6",
+      "category_code": "EDUCATIONAL_METHODICAL",
+      "name": "Разработка рабочих программ дисциплин",
+      "max_hours": 48,
+      "unit_description": "на одну дисциплину",
+      "is_per_unit": true
+    },
+    {
+      "regulation_point": "5.1.7",
+      "category_code": "EDUCATIONAL_METHODICAL",
+      "name": "Разработка программы практики",
+      "max_hours": 30,
+      "unit_description": "за одну программу",
+      "is_per_unit": true
+    },
+    {
+      "regulation_point": "5.1.8",
+      "category_code": "EDUCATIONAL_METHODICAL",
+      "name": "Разработка программы государственной итоговой аттестации",
+      "max_hours": 100,
+      "unit_description": "на всех участников",
+      "is_per_unit": false
+    },
+    {
+      "regulation_point": "5.1.9",
+      "category_code": "EDUCATIONAL_METHODICAL",
+      "name": "Актуализация рабочих программ дисциплин / практик / государственной итоговой аттестации",
+      "max_hours": 30,
+      "unit_description": "за одну программу",
+      "is_per_unit": true
+    },
+    {
+      "regulation_point": "5.1.10",
+      "category_code": "EDUCATIONAL_METHODICAL",
+      "name": "Постановка новых лабораторных работ и обновление действующих с применением специального оборудования",
+      "max_hours": 25,
+      "unit_description": "на одну работу",
+      "is_per_unit": true
+    },
+    {
+      "regulation_point": "5.1.11",
+      "category_code": "EDUCATIONAL_METHODICAL",
+      "name": "Рецензирование учебников, учебно-методических пособий и других учебно-методических материалов",
+      "max_hours": 10,
+      "unit_description": "за 1 печатный лист",
+      "is_per_unit": true
+    },
+    {
+      "regulation_point": "5.1.12",
+      "category_code": "EDUCATIONAL_METHODICAL",
+      "name": "Индивидуальная работа с обучающимися по использованию литературы на иностранном языке в курсовых работах и проектах, выпускных квалификационных работах",
+      "max_hours": 10,
+      "unit_description": "на одного студента",
+      "is_per_unit": true
+    },
+    {
+      "regulation_point": "5.1.13",
+      "category_code": "EDUCATIONAL_METHODICAL",
+      "name": "Работа в редколлегиях научных журналов",
+      "max_hours": 30,
+      "unit_description": "в год",
+      "is_per_unit": false
+    },
+    {
+      "regulation_point": "5.1.14",
+      "category_code": "EDUCATIONAL_METHODICAL",
+      "name": "Работа в учебно-методическом совете",
+      "max_hours": 5,
+      "unit_description": "в год",
+      "is_per_unit": false
+    },
+
+    {
+      "regulation_point": "5.2.1",
+      "category_code": "SCIENTIFIC",
+      "name": "Выполнение научных исследований с подготовкой заключительного (промежуточного) отчёта (раздела отчёта) по г/б НИР",
+      "max_hours": 100,
+      "unit_description": "за один отчёт (если работа не оплачивается)",
+      "is_per_unit": true
+    },
+    {
+      "regulation_point": "5.2.2",
+      "category_code": "SCIENTIFIC",
+      "name": "Выполнение научных экспериментов по утверждённой теме г/б НИР или по заданию кафедры",
+      "max_hours": 10,
+      "unit_description": "на работу (если работа не оплачивается)",
+      "is_per_unit": true
+    },
+    {
+      "regulation_point": "5.2.3",
+      "category_code": "SCIENTIFIC",
+      "name": "Рецензирование отчётов НИР, научных публикаций, диссертационных исследований",
+      "max_hours": 10,
+      "unit_description": "на один вид работы",
+      "is_per_unit": true
+    },
+    {
+      "regulation_point": "5.2.4",
+      "category_code": "SCIENTIFIC",
+      "name": "Подготовка к опубликованию статей в международные, всероссийские, региональные, межвузовские, внутривузовские издания, в сборники научных трудов и журналы научных конференций",
+      "max_hours": 70,
+      "unit_description": "на одну статью",
+      "is_per_unit": true
+    },
+    {
+      "regulation_point": "5.2.5",
+      "category_code": "SCIENTIFIC",
+      "name": "Подготовка докладов на конференции: международные, всероссийские, региональные, межвузовские, внутривузовские",
+      "max_hours": 25,
+      "unit_description": "на один доклад",
+      "is_per_unit": true
+    },
+    {
+      "regulation_point": "5.2.6",
+      "category_code": "SCIENTIFIC",
+      "name": "Участие в конкурсах грантов и целевых НТП различного уровня",
+      "max_hours": 40,
+      "unit_description": "на одно мероприятие",
+      "is_per_unit": true
+    },
+    {
+      "regulation_point": "5.2.7",
+      "category_code": "SCIENTIFIC",
+      "name": "Подготовка монографии",
+      "max_hours": 250,
+      "unit_description": "за одну работу",
+      "is_per_unit": true
+    },
+    {
+      "regulation_point": "5.2.8",
+      "category_code": "SCIENTIFIC",
+      "name": "Руководство НИРС с получением результатов: статьи, доклады обучающихся на различных научных конференциях; подготовка заявок на патенты в соавторстве с обучающимися; внедрение разработок с участием обучающихся",
+      "max_hours": 30,
+      "unit_description": "за результат",
+      "is_per_unit": true
+    },
+    {
+      "regulation_point": "5.2.9",
+      "category_code": "SCIENTIFIC",
+      "name": "Участие в работе диссертационного совета по присуждению учёной степени кандидата или доктора наук: председатель, заместитель председателя диссертационного совета, учёный секретарь диссертационного совета, член совета, член экспертной комиссии",
+      "max_hours": 20,
+      "unit_description": "в год",
+      "is_per_unit": false
+    },
+    {
+      "regulation_point": "5.2.10",
+      "category_code": "SCIENTIFIC",
+      "name": "Участие в работе научно-методических семинаров кафедры",
+      "max_hours": 20,
+      "unit_description": "в год",
+      "is_per_unit": false,
+      "_note": "В приказе формулировка 'научно-методических семинарах кафедры' — там опечатка падежа. Здесь приведено грамматически корректное 'семинаров'."
+    },
+    {
+      "regulation_point": "5.2.11",
+      "category_code": "SCIENTIFIC",
+      "name": "Привлечение обучающихся к проведению научных исследований под руководством научно-педагогических работников",
+      "max_hours": 20,
+      "unit_description": "за работу",
+      "is_per_unit": true
+    },
+
+    {
+      "regulation_point": "5.3.1",
+      "category_code": "ORGANIZATIONAL",
+      "name": "Участие в работе совета факультета, Учёном совете Университета",
+      "max_hours": 20,
+      "unit_description": "на каждый вид участия",
+      "is_per_unit": true
+    },
+    {
+      "regulation_point": "5.3.2",
+      "category_code": "ORGANIZATIONAL",
+      "name": "Работа по профессиональной ориентации и привлечению абитуриентов",
+      "max_hours": 25,
+      "unit_description": "в год",
+      "is_per_unit": false
+    },
+    {
+      "regulation_point": "5.3.3",
+      "category_code": "ORGANIZATIONAL",
+      "name": "Работа по организации взаимодействия с работодателями, трудоустройству выпускников и определению прогнозируемой потребности в квалифицированных специалистах",
+      "max_hours": 30,
+      "unit_description": "в год",
+      "is_per_unit": false
+    },
+    {
+      "regulation_point": "5.3.4",
+      "category_code": "ORGANIZATIONAL",
+      "name": "Участие в качестве члена экзаменационной комиссии по приёму вступительных испытаний, члена жюри олимпиад и конкурсов",
+      "max_hours": 6,
+      "unit_description": "за рабочий день",
+      "is_per_unit": true
+    },
+    {
+      "regulation_point": "5.3.5",
+      "category_code": "ORGANIZATIONAL",
+      "name": "Работа в приёмной комиссии",
+      "max_hours": 150,
+      "unit_description": "за период работы комиссии",
+      "is_per_unit": false
+    },
+
+    {
+      "regulation_point": "5.4.1",
+      "category_code": "EDUCATIONAL_WORK",
+      "name": "Работа в качестве куратора группы (курса)",
+      "max_hours": 100,
+      "unit_description": "в год",
+      "is_per_unit": false
+    },
+    {
+      "regulation_point": "5.4.2",
+      "category_code": "EDUCATIONAL_WORK",
+      "name": "Организация и сопровождение социально-значимых студенческих проектов, целевых программ, конкурсов, фестивалей, семинаров и других мероприятий, направленных на решение задач государственной молодёжной политики",
+      "max_hours": 30,
+      "unit_description": "за мероприятие",
+      "is_per_unit": true
+    },
+    {
+      "regulation_point": "5.4.3",
+      "category_code": "EDUCATIONAL_WORK",
+      "name": "Организация участия обучающихся в мероприятиях городского, регионального, общероссийского, международного уровней, проводимых общественными организациями и государственными структурами по работе со студенческой молодёжью",
+      "max_hours": 30,
+      "unit_description": "за мероприятие",
+      "is_per_unit": true
+    },
+    {
+      "regulation_point": "5.4.4",
+      "category_code": "EDUCATIONAL_WORK",
+      "name": "Проведение культурно-массовых, физкультурно-спортивных, научно-просветительских мероприятий, организация досуга студентов в рамках реализации утверждённого календарного плана структурного подразделения, Университета",
+      "max_hours": 20,
+      "unit_description": "на одно мероприятие",
+      "is_per_unit": true
+    },
+    {
+      "regulation_point": "5.4.5",
+      "category_code": "EDUCATIONAL_WORK",
+      "name": "Разработка и реализация проектов по гармонизации межэтнических и межконфессиональных взаимодействий, профилактике зависимостей в студенческой среде",
+      "max_hours": 20,
+      "unit_description": "за проект",
+      "is_per_unit": true
+    },
+    {
+      "regulation_point": "5.4.6",
+      "category_code": "EDUCATIONAL_WORK",
+      "name": "Разработка и реализация проектов по пропаганде физической культуры и здорового образа жизни",
+      "max_hours": 20,
+      "unit_description": "за проект",
+      "is_per_unit": true
+    },
+    {
+      "regulation_point": "5.4.7",
+      "category_code": "EDUCATIONAL_WORK",
+      "name": "Организация и проведение мероприятий в студенческих общежитиях",
+      "max_hours": 20,
+      "unit_description": "за одно мероприятие",
+      "is_per_unit": true
+    },
+    {
+      "regulation_point": "5.4.8",
+      "category_code": "EDUCATIONAL_WORK",
+      "name": "Участие в проведении мониторингов по выявлению интересов, потребностей, ценностных ориентаций студенческой молодёжи, их оценки организации внеучебной и воспитательной работы в структурном подразделении, в Университете",
+      "max_hours": 20,
+      "unit_description": "за мониторинг",
+      "is_per_unit": true
+    }
+  ]
+}

@@ -1,0 +1,472 @@
+{% extends 'base.html' %}
+
+{% block title %}Утверждение задачи{% endblock %}
+
+{% block content %}
+<div class="mb-3">
+    <a href="{% url 'tasks:pending_approval_list' %}" class="text-decoration-none text-muted">
+        <i class="bi bi-arrow-left me-1"></i>К списку задач на утверждение
+    </a>
+</div>
+
+<div class="row g-3">
+
+    {# ========== ЛЕВАЯ КОЛОНКА: карточка задачи + действия ========== #}
+    <div class="col-lg-7">
+
+        <div class="card shadow-sm mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span class="fw-semibold">
+                    <i class="bi bi-clipboard-check me-1 text-dark"></i>
+                    Внеплановая задача на утверждение
+                </span>
+                <span class="badge text-bg-dark">Ожидает</span>
+            </div>
+            <div class="card-body">
+                <h5 class="fw-bold mb-3">{{ task.title }}</h5>
+
+                <div class="row g-2 small mb-3">
+                    <div class="col-sm-4 text-muted">Преподаватель</div>
+                    <div class="col-sm-8">
+                        {{ task.assignee.user.full_name|default:task.assignee.user.username }}
+                    </div>
+
+                    <div class="col-sm-4 text-muted">Текущая позиция</div>
+                    <div class="col-sm-8">{{ task.assignee.display_label }}</div>
+
+                    <div class="col-sm-4 text-muted">Категория</div>
+                    <div class="col-sm-8">
+                        <span class="badge text-bg-light border">
+                            {{ task.category.name }}
+                        </span>
+                    </div>
+
+                    <div class="col-sm-4 text-muted">Вид работы</div>
+                    <div class="col-sm-8">
+                        {% if task.work_type %}
+                            {{ task.work_type.name }}
+                            {% if task.work_type.max_hours %}
+                                <span class="text-muted">
+                                    (макс. {{ task.work_type.max_hours|floatformat:0 }} ч.)
+                                </span>
+                            {% endif %}
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-sm-4 text-muted">Плановые часы</div>
+                    <div class="col-sm-8 fw-semibold">
+                        {{ task.planned_hours|floatformat:0 }} ч.
+                    </div>
+
+                    <div class="col-sm-4 text-muted">Период</div>
+                    <div class="col-sm-8">
+                        {{ task.start_date|date:"d.m.Y" }} — {{ task.end_date|date:"d.m.Y" }}
+                    </div>
+
+                    <div class="col-sm-4 text-muted">Создана</div>
+                    <div class="col-sm-8">
+                        {{ task.created_at|date:"d.m.Y H:i" }}
+                        {% if task.creator and task.creator != task.assignee.user %}
+                            <span class="text-muted">
+                                (от имени {{ task.creator.full_name|default:task.creator.username }})
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if task.description %}
+                <div class="p-3 bg-light rounded small">
+                    <div class="text-muted mb-1">
+                        <i class="bi bi-chat-left-text me-1"></i>Описание / обоснование
+                    </div>
+                    {{ task.description|linebreaksbr }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        {# ========== Форма действий (13.5.5) ========== #}
+        <div class="card shadow-sm">
+            <div class="card-header fw-semibold">
+                <i class="bi bi-gear me-1"></i>Решение по задаче
+            </div>
+            <div class="card-body">
+
+                {# Ошибки уровня формы (от ValidationError из сервисов) #}
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger small mb-3">
+                        {% for err in form.non_field_errors %}
+                            <div>{{ err }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                {% if not has_any_position %}
+                    <div class="alert alert-warning small mb-3">
+                        <i class="bi bi-exclamation-triangle me-1"></i>
+                        У преподавателя нет активных не-почасовых позиций
+                        в этом учебном году — одобрить задачу невозможно.
+                        Доступно только отклонение.
+                    </div>
+                {% endif %}
+
+                <form method="post" novalidate id="decision-form">
+                    {% csrf_token %}
+
+                    {# Радиокнопки выбора действия #}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold mb-2">Выберите действие:</label>
+                        <div class="d-flex gap-3 flex-wrap">
+                            {% for radio in form.action %}
+                                <div class="form-check">
+                                    {{ radio.tag }}
+                                    <label class="form-check-label" for="{{ radio.id_for_label }}">
+                                        {% if radio.choice_value == 'approve' %}
+                                            <i class="bi bi-check-circle text-success me-1"></i>
+                                        {% else %}
+                                            <i class="bi bi-x-circle text-danger me-1"></i>
+                                        {% endif %}
+                                        {{ radio.choice_label }}
+                                    </label>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        {% if form.action.errors %}
+                            <div class="text-danger small mt-1">{{ form.action.errors|join:" " }}</div>
+                        {% endif %}
+                    </div>
+
+                    {# ===== Блок «Одобрить» ===== #}
+                    <div id="approve-block" class="border rounded p-3 mb-3 bg-success bg-opacity-10"
+                         style="display: none;">
+
+                        {% if multiple_positions %}
+                        <div class="mb-3">
+                            <label for="{{ form.target_position.id_for_label }}"
+                                   class="form-label small fw-semibold">
+                                {{ form.target_position.label }}
+                            </label>
+                            {{ form.target_position }}
+                            {% if form.target_position.help_text %}
+                                <div class="form-text small">{{ form.target_position.help_text }}</div>
+                            {% endif %}
+                            {% if form.target_position.errors %}
+                                <div class="text-danger small">{{ form.target_position.errors|join:" " }}</div>
+                            {% endif %}
+                        </div>
+                        {% else %}
+                            {# Если позиция одна — поле скрытое, текущая позиция остаётся #}
+                            <input type="hidden" name="target_position" value="">
+                        {% endif %}
+
+                        <div class="mb-2">
+                            <label for="{{ form.planned_hours.id_for_label }}"
+                                   class="form-label small fw-semibold">
+                                {{ form.planned_hours.label }}
+                            </label>
+                            {{ form.planned_hours }}
+                            <div class="form-text small">
+                                Преподаватель предложил: {{ task.planned_hours|floatformat:0 }} ч.
+                                Можно изменить перед одобрением.
+                            </div>
+                            {% if form.planned_hours.errors %}
+                                <div class="text-danger small">{{ form.planned_hours.errors|join:" " }}</div>
+                            {% endif %}
+                        </div>
+
+                        {# Блок предупреждений + чекбокс подтверждения (если warnings) #}
+                        {% if workload_warnings %}
+                        <div class="alert alert-warning small mt-3 mb-2">
+                            <div class="fw-semibold mb-1">
+                                <i class="bi bi-exclamation-triangle me-1"></i>
+                                Назначение задачи приведёт к превышению:
+                            </div>
+                            <ul class="mb-2 ps-3">
+                                {% if workload_warnings.total_warning %}
+                                    <li>{{ workload_warnings.total_warning }}</li>
+                                {% endif %}
+                                {% if workload_warnings.category_warning %}
+                                    <li>{{ workload_warnings.category_warning }}</li>
+                                {% endif %}
+                            </ul>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox"
+                                       name="confirm_overload" id="confirm_overload" value="1" required>
+                                <label class="form-check-label fw-semibold" for="confirm_overload">
+                                    Подтверждаю превышение лимитов
+                                </label>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    {# ===== Блок «Отклонить» ===== #}
+                    <div id="decline-block" class="border rounded p-3 mb-3 bg-danger bg-opacity-10"
+                         style="display: none;">
+
+                        <div class="mb-2">
+                            <label for="{{ form.reason.id_for_label }}"
+                                   class="form-label small fw-semibold">
+                                {{ form.reason.label }}
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.reason }}
+                            <div class="form-text small">
+                                Преподаватель увидит эту причину рядом с задачей в статусе «Не утверждена».
+                            </div>
+                            {% if form.reason.errors %}
+                                <div class="text-danger small">{{ form.reason.errors|join:" " }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {# Кнопки отправки #}
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button type="submit" id="submit-approve" class="btn btn-success"
+                                style="display: none;"
+                                {% if not has_any_position %}disabled{% endif %}>
+                            <i class="bi bi-check-circle me-1"></i>Одобрить и назначить
+                        </button>
+                        <button type="submit" id="submit-decline" class="btn btn-danger"
+                                style="display: none;">
+                            <i class="bi bi-x-circle me-1"></i>Отклонить задачу
+                        </button>
+                        <a href="{% url 'tasks:pending_approval_list' %}"
+                           class="btn btn-outline-secondary">
+                            Отмена
+                        </a>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+
+    </div>
+
+    {# ========== ПРАВАЯ КОЛОНКА: прогноз по позициям ========== #}
+    <div class="col-lg-5">
+
+        <div class="card shadow-sm">
+            <div class="card-header fw-semibold">
+                <i class="bi bi-people me-1"></i>
+                {% if multiple_positions %}
+                    Прогноз по позициям преподавателя
+                {% else %}
+                    Текущая нагрузка преподавателя
+                {% endif %}
+            </div>
+            <div class="card-body p-0">
+
+                {% if forecasts %}
+                    {% for forecast in forecasts %}
+                    <div class="px-3 py-3 {% if not forloop.last %}border-bottom{% endif %}
+                                {% if forecast.is_current %}bg-light{% endif %}">
+
+                        {# Шапка карточки позиции #}
+                        <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                            <div>
+                                <div class="fw-semibold small">
+                                    {{ forecast.position.display_label }}
+                                </div>
+                                {% if forecast.is_current %}
+                                    <span class="badge text-bg-info" style="font-size: 0.65rem;">
+                                        <i class="bi bi-arrow-right-circle"></i>
+                                        Текущая позиция задачи
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        {# Сводные числа: общий лимит #}
+                        {% with stats=forecast.stats %}
+                        <div class="small mb-2">
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted">Всего часов запланировано:</span>
+                                <span class="fw-semibold">
+                                    {{ stats.total_planned|floatformat:0 }}
+                                    {% if stats.max_total_hours %}
+                                        / {{ stats.max_total_hours|floatformat:0 }} ч.
+                                    {% else %}
+                                        ч.
+                                    {% endif %}
+                                </span>
+                            </div>
+                            {% if stats.max_total_hours %}
+                                {% widthratio stats.total_planned stats.max_total_hours 100 as pct %}
+                                <div class="progress mt-1" style="height: 6px;">
+                                    <div class="progress-bar
+                                        {% if pct|add:0 > 100 %}bg-danger
+                                        {% elif pct|add:0 > 90 %}bg-warning
+                                        {% else %}bg-success{% endif %}"
+                                        style="width: {% if pct|add:0 > 100 %}100{% else %}{{ pct }}{% endif %}%">
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        {# Объём второй половины (если есть) #}
+                        {% if stats.second_half_hours is not None %}
+                        <div class="small text-muted mb-2">
+                            <i class="bi bi-half"></i>
+                            Вторая половина дня: {{ stats.second_half_hours|floatformat:0 }} ч.
+                        </div>
+                        {% endif %}
+
+                        {# Разбивка по категориям (только не-почасовые) #}
+                        {% if stats.by_category and stats.second_half_hours is not None %}
+                        <div class="mt-2 small">
+                            <div class="text-muted mb-1">
+                                <i class="bi bi-pie-chart me-1"></i>По категориям:
+                            </div>
+                            {% for cat_row in stats.by_category %}
+                                <div class="d-flex justify-content-between
+                                            {% if cat_row.is_above_max %}text-danger fw-semibold
+                                            {% elif cat_row.is_below_min %}text-warning{% endif %}">
+                                    <span>
+                                        {% if cat_row.category.pk == task.category_id %}
+                                            <i class="bi bi-arrow-right-short text-primary"></i>
+                                        {% endif %}
+                                        {{ cat_row.category.name }}
+                                    </span>
+                                    <span>
+                                        {{ cat_row.planned|floatformat:0 }}
+                                        {% if cat_row.max_hours %}
+                                            / {{ cat_row.max_hours|floatformat:0 }}
+                                        {% endif %}
+                                        ч.
+                                    </span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        {% endwith %}
+
+                        {# Прогноз — что будет, если повесить задачу сюда #}
+                        <div class="mt-3 p-2 rounded
+                            {% if forecast.has_warnings %}bg-warning bg-opacity-10
+                            {% else %}bg-success bg-opacity-10{% endif %}">
+                            <div class="small fw-semibold mb-1">
+                                {% if forecast.has_warnings %}
+                                    <i class="bi bi-exclamation-triangle text-warning me-1"></i>
+                                    Превышение лимитов
+                                {% else %}
+                                    <i class="bi bi-check-circle text-success me-1"></i>
+                                    Можно повесить без превышений
+                                {% endif %}
+                            </div>
+                            {% if forecast.warnings %}
+                                <ul class="small mb-0 ps-3">
+                                    {% if forecast.warnings.total_warning %}
+                                        <li>{{ forecast.warnings.total_warning }}</li>
+                                    {% endif %}
+                                    {% if forecast.warnings.category_warning %}
+                                        <li>{{ forecast.warnings.category_warning }}</li>
+                                    {% endif %}
+                                </ul>
+                            {% endif %}
+                        </div>
+
+                    </div>
+                    {% endfor %}
+
+                {% else %}
+                    <div class="text-center text-muted py-4 px-3 small">
+                        <i class="bi bi-exclamation-circle d-block mb-2 fs-4"></i>
+                        У преподавателя нет активных не-почасовых позиций
+                        в текущем учебном году.
+                        <br>
+                        <span class="text-danger">
+                            Эту задачу нельзя одобрить — отклоните её.
+                        </span>
+                    </div>
+                {% endif %}
+
+            </div>
+        </div>
+
+        {% if forecasts %}
+        <div class="alert alert-light border mt-3 small mb-0">
+            <i class="bi bi-info-circle me-1"></i>
+            Стрелка <i class="bi bi-arrow-right-short"></i> в разбивке по категориям
+            показывает категорию, к которой относится рассматриваемая задача
+            («{{ task.category.name }}»).
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+
+{# ===== JS: переключение видимости блоков по выбору действия ===== #}
+<script>
+(function() {
+    'use strict';
+
+    const form = document.getElementById('decision-form');
+    if (!form) return;
+
+    const radios = form.querySelectorAll('input[type=radio][name=action]');
+    const approveBlock = document.getElementById('approve-block');
+    const declineBlock = document.getElementById('decline-block');
+    const submitApprove = document.getElementById('submit-approve');
+    const submitDecline = document.getElementById('submit-decline');
+    const hasAnyPosition = {{ has_any_position|yesno:"true,false" }};
+
+    // Bootstrap-классы для полей
+    const targetPositionField = form.querySelector('[name=target_position]');
+    if (targetPositionField && targetPositionField.tagName === 'SELECT') {
+        targetPositionField.classList.add('form-select', 'form-select-sm');
+    }
+    const plannedHoursField = form.querySelector('[name=planned_hours]');
+    if (plannedHoursField) {
+        plannedHoursField.classList.add('form-control', 'form-control-sm');
+    }
+    const reasonField = form.querySelector('[name=reason]');
+    if (reasonField) {
+        reasonField.classList.add('form-control', 'form-control-sm');
+    }
+
+    function updateVisibility() {
+        const selected = form.querySelector('input[type=radio][name=action]:checked');
+        const value = selected ? selected.value : null;
+
+        if (value === 'approve') {
+            approveBlock.style.display = '';
+            declineBlock.style.display = 'none';
+            submitApprove.style.display = '';
+            submitDecline.style.display = 'none';
+        } else if (value === 'decline') {
+            approveBlock.style.display = 'none';
+            declineBlock.style.display = '';
+            submitApprove.style.display = 'none';
+            submitDecline.style.display = '';
+        } else {
+            approveBlock.style.display = 'none';
+            declineBlock.style.display = 'none';
+            submitApprove.style.display = 'none';
+            submitDecline.style.display = 'none';
+        }
+    }
+
+    // Если у преподавателя нет позиций — блокируем выбор «Одобрить»
+    if (!hasAnyPosition) {
+        radios.forEach(function(r) {
+            if (r.value === 'approve') {
+                r.disabled = true;
+                const lbl = form.querySelector('label[for="' + r.id + '"]');
+                if (lbl) lbl.classList.add('text-muted');
+            }
+        });
+    }
+
+    radios.forEach(function(r) {
+        r.addEventListener('change', updateVisibility);
+    });
+
+    // Если форма пришла с ошибкой — восстановим выбор пользователя.
+    updateVisibility();
+})();
+</script>
+
+{% endblock %}

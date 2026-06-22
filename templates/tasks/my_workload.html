@@ -1,0 +1,254 @@
+{% extends 'base.html' %}
+
+{% block title %}Моя нагрузка{% endblock %}
+
+{% block page_header %}
+<h4 class="mb-0">
+    <i class="bi bi-clock-history me-2"></i>Моя нагрузка
+</h4>
+{% if active_year %}
+    <span class="text-muted small">Учебный год: {{ active_year.name }}</span>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+
+{% if not active_year %}
+<div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle me-2"></i>
+    Нет активного учебного года. Обратитесь к администратору.
+</div>
+{% else %}
+
+
+{% if stats %}
+
+{# === Карточка преподавателя === #}
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h5 class="mb-1">{{ teacher.full_name|default:teacher.username }}</h5>
+                {% if teacher.academic_title %}
+                    <div class="text-muted small">{{ teacher.academic_title }}</div>
+                {% endif %}
+                {% if primary_position %}
+                    <span class="text-muted">
+                        {{ primary_position.position.name }}
+                        &middot; {{ primary_position.get_employment_type_display }}
+                        {% if not primary_position.is_hourly and primary_position.rate %}
+                            &middot; ставка {{ primary_position.rate }}
+                        {% endif %}
+                    </span>
+                {% else %}
+                    <span class="text-muted">Позиции в этом году нет</span>
+                {% endif %}
+            </div>
+            <div class="col-md-6 text-md-end mt-2 mt-md-0">
+                <span class="small text-muted">Задач всего:</span>
+                <span class="badge bg-primary ms-1">{{ stats.tasks_count.total }}</span>
+                <span class="small text-muted ms-2">Подтверждено:</span>
+                <span class="badge bg-success ms-1">{{ stats.tasks_count.approved }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+{# Учебная работа (первая половина дня) #}
+{% include 'tasks/_teaching_load_block.html' %}
+{# === Общая нагрузка === #}
+<div class="card shadow-sm mb-4">
+    <div class="card-header fw-semibold">
+        <i class="bi bi-bar-chart me-1"></i> Общая нагрузка
+    </div>
+    <div class="card-body">
+        {# Плановые часы #}
+        <div class="mb-4">
+            <div class="d-flex justify-content-between mb-1">
+                <span class="fw-semibold">Плановые часы</span>
+                <span class="{% if stats.is_overloaded %}text-danger fw-bold{% endif %}">
+                    {{ stats.total_planned|floatformat:0 }}
+                    {% if stats.max_total_hours > 0 %}
+                        / {{ stats.max_total_hours }} ч.
+                    {% else %}
+                        ч. (норма не задана)
+                    {% endif %}
+                </span>
+            </div>
+            {% if stats.max_total_hours > 0 %}
+                {% widthratio stats.total_planned stats.max_total_hours 100 as pct %}
+                <div class="progress" style="height: 16px;">
+                    <div class="progress-bar
+                        {% if stats.is_overloaded %}bg-danger
+                        {% elif pct|add:0 >= 90 %}bg-warning
+                        {% else %}bg-primary{% endif %}"
+                        style="width: {% if pct > 100 %}100{% else %}{{ pct }}{% endif %}%">
+                        {{ pct }}%
+                    </div>
+                </div>
+                {% if stats.is_overloaded %}
+                <div class="text-danger small mt-1">
+                    <i class="bi bi-exclamation-triangle me-1"></i>
+                    Превышена норма нагрузки!
+                </div>
+                {% endif %}
+            {% endif %}
+        </div>
+
+
+
+        {# Учебная нагрузка #}
+        {% if stats.max_teaching_hours > 0 %}
+        <div>
+            <div class="d-flex justify-content-between mb-1">
+                <span class="fw-semibold">Учебная нагрузка</span>
+                <span class="{% if stats.teaching_planned > stats.max_teaching_hours %}text-danger fw-bold{% endif %}">
+                    {{ stats.teaching_planned|floatformat:0 }} / {{ stats.max_teaching_hours }} ч.
+                </span>
+            </div>
+            {% widthratio stats.teaching_planned stats.max_teaching_hours 100 as teach_pct %}
+            <div class="progress" style="height: 16px;">
+                <div class="progress-bar
+                    {% if stats.teaching_planned > stats.max_teaching_hours %}bg-danger
+                    {% elif teach_pct|add:0 >= 90 %}bg-warning
+                    {% else %}bg-info{% endif %}"
+                    style="width: {% if teach_pct > 100 %}100{% else %}{{ teach_pct }}{% endif %}%">
+                    {{ teach_pct }}%
+                </div>
+            </div>
+            <div class="small text-muted mt-1">
+                Допустимый диапазон: {{ stats.min_teaching_hours }}–{{ stats.max_teaching_hours }} ч.
+                (отклонение до {{ stats.tolerance }} ч.)
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{# === Разбивка по категориям === #}
+<div class="card shadow-sm mb-4">
+    <div class="card-header fw-semibold">
+        <i class="bi bi-grid me-1"></i> Нагрузка по категориям
+    </div>
+    {% if stats.second_half_hours is not None %}
+    <div class="small text-muted mb-2 px-3 pt-2">
+        <i class="bi bi-info-circle me-1"></i>
+        Объём второй половины дня: <strong>{{ stats.second_half_hours|floatformat:0 }}</strong> ч.
+    </div>
+    {% endif %}
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Категория</th>
+                        <th class="text-center">Задач</th>
+                        <th class="text-center">План (ч.)</th>
+                        <th class="text-center">Факт (ч.)</th>
+                        <th class="text-center" style="min-width: 110px;">Диапазон</th>
+                        <th style="min-width: 150px;">Прогресс</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in stats.by_category %}
+                    <tr {% if item.is_above_max %}class="table-danger"{% elif item.is_below_min %}class="table-warning"{% elif item.count == 0 %}class="text-muted"{% endif %}>
+                        <td class="fw-semibold">{{ item.category.name }}</td>
+                        <td class="text-center">
+                            <span class="badge bg-light text-dark border">{{ item.count }}</span>
+                        </td>
+                        <td class="text-center">{{ item.planned|floatformat:0 }}</td>
+                        <td class="text-center text-success">{{ item.actual|floatformat:0 }}</td>
+                        <td class="text-center small text-nowrap">
+                            {% if item.min_hours is not None %}
+                                <span {% if item.regulation_point %}title="Пункт приказа: {{ item.regulation_point }}" data-bs-toggle="tooltip"{% endif %}>
+                                    {{ item.min_hours|floatformat:0 }}–{{ item.max_hours|floatformat:0 }} ч.
+                                    {% if item.regulation_point %}
+                                        <i class="bi bi-question-circle text-muted ms-1" style="font-size: 0.75rem;"></i>
+                                    {% endif %}
+                                </span>
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if item.max_hours is not None and item.max_hours > 0 %}
+                                {% widthratio item.planned item.max_hours 100 as fill_pct %}
+                                {% widthratio item.min_hours item.max_hours 100 as norm_start %}
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="position-relative flex-grow-1" style="height: 12px;">
+                                        {% if item.min_hours and item.min_hours > 0 %}
+                                        <div class="position-absolute bg-success bg-opacity-10 rounded"
+                                             style="left: {{ norm_start }}%; right: 0; top: 0; bottom: 0;"></div>
+                                        {% endif %}
+                                        <div class="progress position-relative" style="height: 12px; background: transparent; border: 1px solid #dee2e6;">
+                                            <div class="progress-bar {% if item.is_above_max %}bg-danger{% elif item.is_below_min %}bg-warning{% else %}bg-primary{% endif %}"
+                                                 style="width: {% if fill_pct > 100 %}100{% else %}{{ fill_pct }}{% endif %}%;">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <span class="small text-nowrap">{{ item.planned|floatformat:0 }} ч.</span>
+                                </div>
+                            {% else %}
+                                {% if item.planned > 0 %}
+                                    {% widthratio item.actual item.planned 100 as cat_pct %}
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="progress flex-grow-1" style="height: 8px;">
+                                            <div class="progress-bar bg-primary" style="width: {% if cat_pct > 100 %}100{% else %}{{ cat_pct }}{% endif %}%;"></div>
+                                        </div>
+                                        <span class="small text-nowrap">{{ cat_pct }}%</span>
+                                    </div>
+                                {% else %}
+                                    <span class="text-muted small">—</span>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                {% if stats.second_half_hours is not None %}
+                <tfoot>
+                    {# 6 колонок: Категория | Задач | План | Факт | Диапазон+Прогресс (colspan=2) #}
+                    <tr {% if stats.second_half_overflow %}class="table-danger"{% endif %}>
+                        <td class="fw-semibold">Σ по категориям</td>
+                        <td></td>
+                        <td class="text-center fw-semibold text-nowrap">
+                            {{ stats.second_half_planned|floatformat:0 }} / {{ stats.second_half_hours|floatformat:0 }} ч.
+                        </td>
+                        <td></td>
+                        <td colspan="2" class="small">
+                            {% if stats.second_half_overflow %}
+                            <span class="text-danger fw-semibold">
+                                <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                                Превышение второй половины дня на {{ stats.second_half_overflow|floatformat:0 }} ч.
+                            </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </tfoot>
+                {% endif %}
+            </table>
+        </div>
+    </div>
+    {% if stats.second_half_hours is not None %}
+    <div class="card-footer bg-transparent small text-muted">
+        <i class="bi bi-square-fill text-danger me-1" style="font-size: 0.6rem;"></i> Превышен максимум
+        <i class="bi bi-square-fill text-warning me-1 ms-3" style="font-size: 0.6rem;"></i> Ниже минимума
+        {% if stats.second_half_hours %}
+        <span class="ms-3">
+            <i class="bi bi-question-circle me-1"></i>Наведите на диапазон для пункта приказа
+        </span>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+{% endif %}{# stats #}
+{% endif %}{# active_year #}
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function(el) { return new bootstrap.Tooltip(el); });
+    });
+</script>
+{% endblock %}
+{% endblock %}

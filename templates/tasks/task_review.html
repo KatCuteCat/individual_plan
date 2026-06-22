@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block title %}Проверка задачи{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="{% url 'tasks:task_list' %}" class="text-decoration-none text-muted">
+        <i class="bi bi-arrow-left me-1"></i>Назад к списку задач
+    </a>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm mb-3">
+            <div class="card-header">
+                <h5 class="mb-0">Проверка выполнения задачи</h5>
+            </div>
+            <div class="card-body">
+
+                {# Информация о задаче #}
+                <div class="mb-4">
+                    <h6 class="fw-bold">{{ task.title }}</h6>
+                    <div class="row g-2 text-sm">
+                        <div class="col-sm-4 text-muted">Исполнитель</div>
+                        <div class="col-sm-8">
+                            {{ task.assignee.user.full_name|default:task.assignee.user.username }}
+                        </div>
+                        <div class="col-sm-4 text-muted">Категория</div>
+                        <div class="col-sm-8">{{ task.category.name }}</div>
+                        <div class="col-sm-4 text-muted">Плановые часы</div>
+                        <div class="col-sm-8">{{ task.planned_hours }} ч.</div>
+                        <div class="col-sm-4 text-muted">Фактические часы</div>
+                        <div class="col-sm-8">
+                            {% if task.actual_hours %}
+                                {{ task.actual_hours }} ч.
+                            {% else %}
+                                <span class="text-muted">не указаны</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-sm-4 text-muted">Срок</div>
+                        <div class="col-sm-8">
+                            {{ task.start_date|date:"d.m.Y" }} — {{ task.end_date|date:"d.m.Y" }}
+                        </div>
+                        {% if task.result %}
+                        <div class="col-sm-4 text-muted">Результат</div>
+                        <div class="col-sm-8">{{ task.result }}</div>
+                        {% endif %}
+                    </div>
+                    {% if task.description %}
+                        <div class="mt-3 p-3 bg-light rounded small">
+                            {{ task.description }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <hr>
+
+                {# Действия #}
+                <div class="d-flex gap-3 flex-wrap">
+
+                    {# Подтвердить #}
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="approve">
+                        <button type="submit" class="btn btn-success"
+                                onclick="return confirm('Подтвердить выполнение задачи «{{ task.title }}»?')">
+                            <i class="bi bi-check-circle me-1"></i>Подтвердить
+                        </button>
+                    </form>
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

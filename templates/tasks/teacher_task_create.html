@@ -1,0 +1,484 @@
+{% extends 'base.html' %}
+
+{% block title %}Новая задача{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block page_header %}
+<h4 class="mb-0">
+    {% if is_edit %}
+        <i class="bi bi-pencil-square me-2"></i>Редактирование задачи
+    {% else %}
+        <i class="bi bi-plus-circle me-2"></i>Новая задача
+    {% endif %}
+</h4>
+<span class="text-muted small">
+    {% if is_edit %}
+        Изменения сохранятся в задаче, ожидающей утверждения.
+    {% else %}
+        Внеплановая задача — ожидает утверждения заведующим
+    {% endif %}
+</span>
+{% endblock %}
+
+{% block content %}
+
+{# ===== Плашка с текущей позицией ===== #}
+<div class="alert alert-vgtu-gold d-flex align-items-start mb-4"
+     style="background-color: #FBF6EC; border: 1px solid var(--vgtu-gold, #B99F6E); color: #5C4A1F;">
+    <i class="bi bi-info-circle-fill me-2 mt-1"></i>
+    <div>
+        <div class="fw-semibold">
+            Задача будет создана в позиции:
+            <span class="text-dark">{{ teacher_position.display_label }}</span>
+        </div>
+        {% if has_multiple_positions %}
+        <div class="small mt-1">
+            Чтобы создать задачу в другой позиции —
+            переключитесь в шапке («Я работаю как:»).
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{# ===== Информационная подсказка о процессе ===== #}
+<div class="alert alert-info d-flex align-items-start mb-4">
+    <i class="bi bi-lightbulb me-2 mt-1"></i>
+    <div class="small">
+        После сохранения задача получит статус <strong>«Ожидает утверждения»</strong>
+        и появится у заведующего на проверке.
+        Когда он одобрит — задача станет назначенной, и её можно будет взять в работу.
+    </div>
+</div>
+
+{# ===== Форма ===== #}
+<div class="card shadow-sm">
+    <div class="card-body">
+        <form method="post" novalidate>
+            {% csrf_token %}
+
+            {# Глобальные ошибки формы (не привязанные к полю) #}
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+
+            {# Категория #}
+            <div class="mb-3">
+                <label for="{{ form.category.id_for_label }}" class="form-label fw-semibold">
+                    {{ form.category.label }} <span class="text-danger">*</span>
+                </label>
+                {{ form.category }}
+                {% if form.category.errors %}
+                    <div class="invalid-feedback d-block">{{ form.category.errors|join:" " }}</div>
+                {% endif %}
+            </div>
+
+            {# Вид работы #}
+            <div class="mb-3">
+                <label for="{{ form.work_type.id_for_label }}" class="form-label fw-semibold">
+                    {{ form.work_type.label }} <span class="text-danger">*</span>
+                </label>
+                {{ form.work_type }}
+                <small class="form-text text-muted" data-role="work-type-hint">
+                    Сначала выберите категорию — список видов работ обновится.
+                </small>
+                {% if form.work_type.errors %}
+                    <div class="invalid-feedback d-block">{{ form.work_type.errors|join:" " }}</div>
+                {% endif %}
+            </div>
+
+            {# Карточка «Текущее состояние» — заполняется JS при выборе категории #}
+            <div data-role="current-state" class="card border-secondary-subtle mb-3" style="display:none"></div>
+
+            {# Плановые часы + даты #}
+            <div class="row g-3 mb-3">
+                <div class="col-md-4">
+                    <label for="{{ form.planned_hours.id_for_label }}" class="form-label fw-semibold">
+                        {{ form.planned_hours.label }} <span class="text-danger">*</span>
+                    </label>
+                    {{ form.planned_hours }}
+                    <small class="form-text text-muted" data-role="hours-hint">
+                        Минимум 0,5 ч.
+                    </small>
+                    {% if form.planned_hours.errors %}
+                        <div class="invalid-feedback d-block">{{ form.planned_hours.errors|join:" " }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-md-4">
+                    <label for="{{ form.start_date.id_for_label }}" class="form-label fw-semibold">
+                        {{ form.start_date.label }} <span class="text-danger">*</span>
+                    </label>
+                    {{ form.start_date }}
+                    {% if form.start_date.errors %}
+                        <div class="invalid-feedback d-block">{{ form.start_date.errors|join:" " }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-md-4">
+                    <label for="{{ form.end_date.id_for_label }}" class="form-label fw-semibold">
+                        {{ form.end_date.label }} <span class="text-danger">*</span>
+                    </label>
+                    {{ form.end_date }}
+                    {% if form.end_date.errors %}
+                        <div class="invalid-feedback d-block">{{ form.end_date.errors|join:" " }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {# Карточка «После добавления» — показывается при вводе часов #}
+            <div data-role="forecast" class="card mb-3" style="display:none"></div>
+
+            {# Уточнение — последнее поле перед кнопками #}
+            <div class="mb-3">
+                <label for="{{ form.description.id_for_label }}" class="form-label fw-semibold">
+                    {{ form.description.label }}
+                </label>
+                {{ form.description }}
+                {% if form.description.help_text %}
+                    <div class="form-text text-muted">{{ form.description.help_text }}</div>
+                {% endif %}
+                {% if form.description.errors %}
+                    <div class="invalid-feedback d-block">{{ form.description.errors|join:" " }}</div>
+                {% endif %}
+            </div>
+
+            {# Кнопки #}
+            <div class="d-flex justify-content-end gap-2 mt-4">
+                <a href="{% url 'tasks:my_tasks' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-lg me-1"></i>Отмена
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    {% if is_edit %}
+                        <i class="bi bi-check-lg me-1"></i>Сохранить изменения
+                    {% else %}
+                        <i class="bi bi-send me-1"></i>Отправить на утверждение
+                    {% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+<script>
+(function () {
+    var workTypesByCategory = {{ work_types_by_category_json|safe }};
+    var categoriesCodeMap   = {{ categories_code_map_json|safe }};
+    var workloadData        = {{ workload_data_json|safe }};
+
+    var categorySelect  = document.querySelector('[data-role="category-select"]');
+    var workTypeSelect  = document.querySelector('[data-role="work-type-select"]');
+    var hoursInput      = document.querySelector('[data-role="planned-hours-input"]');
+    var workTypeHint    = document.querySelector('[data-role="work-type-hint"]');
+    var hoursHint       = document.querySelector('[data-role="hours-hint"]');
+    var currentStateBox = document.querySelector('[data-role="current-state"]');
+    var forecastBox     = document.querySelector('[data-role="forecast"]');
+
+    if (!categorySelect || !workTypeSelect) { return; }
+
+    // Проставляем data-code на опции категории.
+    Array.prototype.forEach.call(categorySelect.options, function (opt) {
+        if (opt.value && categoriesCodeMap[opt.value]) {
+            opt.dataset.code = categoriesCodeMap[opt.value];
+        }
+    });
+
+    var initialWorkTypeId = workTypeSelect.value;
+    var workTypeTomSelect = null;
+
+    // ── Фильтр видов работ: нативный DOM (до TomSelect) или API (после) ──
+
+    function renderWorkTypeOptions(categoryId, selectedId) {
+        if (workTypeTomSelect) {
+            // После инициализации TomSelect — используем его API.
+            workTypeTomSelect.clearOptions();
+            workTypeTomSelect.setValue('', true);
+            if (categoryId) {
+                var items = workTypesByCategory[categoryId] || [];
+                workTypeTomSelect.addOptions(items.map(function (item) {
+                    return {
+                        value: String(item.id),
+                        text: item.name + ' (до ' + item.max_hours + ' ч.'
+                              + (item.unit ? ' — ' + item.unit : '') + ')',
+                    };
+                }));
+                if (workTypeHint) {
+                    workTypeHint.textContent = items.length === 0
+                        ? 'Для этой категории нет активных видов работ.'
+                        : 'Норматив часов подставится автоматически.';
+                }
+            } else {
+                if (workTypeHint) { workTypeHint.textContent = 'Сначала выберите категорию — список видов работ обновится.'; }
+            }
+            workTypeTomSelect.refreshOptions(false);
+            return;
+        }
+
+        // До TomSelect: стандартная манипуляция DOM.
+        workTypeSelect.innerHTML = '';
+        var emptyOpt = document.createElement('option');
+        emptyOpt.value = '';
+        emptyOpt.textContent = '— выберите вид работы —';
+        workTypeSelect.appendChild(emptyOpt);
+
+        if (!categoryId) {
+            if (workTypeHint) { workTypeHint.textContent = 'Сначала выберите категорию — список видов работ обновится.'; }
+            return;
+        }
+        var items = workTypesByCategory[categoryId] || [];
+        if (items.length === 0) {
+            if (workTypeHint) { workTypeHint.textContent = 'Для этой категории нет активных видов работ.'; }
+            return;
+        }
+        items.forEach(function (item) {
+            var opt = document.createElement('option');
+            opt.value = item.id;
+            opt.textContent = item.name + ' (до ' + item.max_hours + ' ч.'
+                              + (item.unit ? ' — ' + item.unit : '') + ')';
+            if (String(item.id) === String(selectedId)) { opt.selected = true; }
+            workTypeSelect.appendChild(opt);
+        });
+        if (workTypeHint) { workTypeHint.textContent = 'Норматив часов подставится автоматически.'; }
+    }
+
+    // ── Вспомогательные функции данных ───────────────────────────────
+
+    function getCategoryCode() {
+        var opt = categorySelect.options[categorySelect.selectedIndex];
+        return (opt && opt.dataset.code) ? opt.dataset.code : null;
+    }
+
+    function getSelectedWorkType() {
+        var value = workTypeSelect.value;
+        var categoryId = categorySelect.value;
+        if (!value || !categoryId) { return null; }
+        var items = workTypesByCategory[categoryId] || [];
+        for (var i = 0; i < items.length; i++) {
+            if (String(items[i].id) === String(value)) {
+                return { max_hours: items[i].max_hours, unit: items[i].unit || '', name: items[i].name, is_per_unit: items[i].is_per_unit === true };
+            }
+        }
+        return null;
+    }
+
+    function applyMaxHoursFromWorkType() {
+        var wt = getSelectedWorkType();
+        if (!wt || !wt.max_hours) {
+            hoursInput.removeAttribute('max');
+            if (hoursHint) { hoursHint.textContent = 'Минимум 0,5 ч.'; }
+            return;
+        }
+        if (wt.is_per_unit) {
+            // Норматив на единицу — одна задача может содержать несколько единиц,
+            // поэтому атрибут max не выставляем (иначе браузер заблокирует ввод).
+            hoursInput.removeAttribute('max');
+            if (hoursHint) {
+                hoursHint.textContent = 'Норматив: до ' + wt.max_hours + ' ч. на одну единицу. '
+                                      + 'В одной задаче допустимо несколько единиц. Минимум 0,5 ч.';
+            }
+            if (!hoursInput.value) { hoursInput.value = wt.max_hours; }
+            return;
+        }
+        hoursInput.setAttribute('max', wt.max_hours);
+        if (hoursHint) { hoursHint.textContent = 'Норматив: до ' + wt.max_hours + ' ч. Минимум 0,5 ч.'; }
+        if (!hoursInput.value) { hoursInput.value = wt.max_hours; }
+    }
+
+    function getPlannedHours() {
+        var val = parseFloat(hoursInput.value);
+        return isNaN(val) ? 0 : val;
+    }
+
+    function getEffectiveTasksTotal() {
+        var total = workloadData.tasks_planned;
+        if (workloadData.editing_task) { total -= workloadData.editing_task.planned_hours; }
+        return total;
+    }
+
+    function getEffectiveCategoryPlanned(categoryCode) {
+        var cat = workloadData.by_category[categoryCode];
+        if (!cat) { return 0; }
+        var planned = cat.planned;
+        if (workloadData.editing_task && workloadData.editing_task.category_code === categoryCode) {
+            planned -= workloadData.editing_task.planned_hours;
+        }
+        return planned;
+    }
+
+    // ── Карточка «Текущее состояние» ─────────────────────────────────
+
+    function renderCurrentState() {
+        var categoryCode = getCategoryCode();
+        var workType = getSelectedWorkType();
+        var catOpt = categorySelect.options[categorySelect.selectedIndex];
+        var catName = catOpt ? catOpt.textContent.trim() : '';
+
+        if (!categoryCode) {
+            currentStateBox.innerHTML = '';
+            currentStateBox.style.display = 'none';
+            return;
+        }
+
+        var cat = workloadData.by_category[categoryCode];
+        var html = '<div class="card-body py-2 px-3">'
+                 + '<div class="fw-semibold mb-1 small text-secondary">Текущее состояние</div>';
+
+        if (workType && workType.max_hours) {
+            html += '<div class="small">Норматив вида работы: <strong>до '
+                  + workType.max_hours + ' ч.'
+                  + (workType.unit ? ' — ' + workType.unit : '') + '</strong>';
+            if (workType.is_per_unit) {
+                html += '<span class="text-muted ms-1">(несколько единиц в одной задаче — допустимо)</span>';
+            }
+            html += '</div>';
+        }
+        if (cat && cat.max_hours !== null) {
+            var catCurrent = getEffectiveCategoryPlanned(categoryCode);
+            html += '<div class="small">Категория «' + catName + '»: '
+                  + catCurrent.toFixed(0) + ' / ' + cat.max_hours.toFixed(0)
+                  + ' ч. (осталось ' + (cat.max_hours - catCurrent).toFixed(0) + ')</div>';
+            // Минимум по категории (для УМР и НИР — 10 % от второй половины дня).
+            if (cat.min_hours !== null && cat.min_hours > 0) {
+                var belowMinNow = catCurrent < cat.min_hours;
+                var minLine = '<div class="small ' + (belowMinNow ? 'text-warning-emphasis' : 'text-muted') + '">'
+                            + (belowMinNow ? '↓ ' : '')
+                            + 'Минимум по приказу: ' + cat.min_hours.toFixed(0) + ' ч.';
+                if (belowMinNow) {
+                    minLine += ' (не хватает ' + (cat.min_hours - catCurrent).toFixed(0) + ' ч.)';
+                }
+                minLine += '</div>';
+                html += minLine;
+            }
+        }
+        if (workloadData.max_total_hours > 0) {
+            var totalCurrent = workloadData.teaching_planned + getEffectiveTasksTotal();
+            html += '<div class="small">Общая нагрузка: '
+                  + totalCurrent.toFixed(0) + ' / ' + workloadData.max_total_hours
+                  + ' ч. (осталось ' + (workloadData.max_total_hours - totalCurrent).toFixed(0) + ')</div>';
+        }
+        html += '</div>';
+        currentStateBox.innerHTML = html;
+        currentStateBox.style.display = '';
+    }
+
+    // ── Карточка «После добавления» ───────────────────────────────────
+
+    function renderForecast() {
+        var categoryCode = getCategoryCode();
+        var workType = getSelectedWorkType();
+        var hours = getPlannedHours();
+
+        if (!categoryCode || hours <= 0) {
+            forecastBox.style.display = 'none';
+            return;
+        }
+
+        var cat = workloadData.by_category[categoryCode];
+        var catOpt = categorySelect.options[categorySelect.selectedIndex];
+        var catName = catOpt ? catOpt.textContent.trim() : '';
+        var warnings = [];
+        var belowMinMessages = [];
+        var hasOverload = false;
+        var hasBelowMin = false;
+        var html = '<div class="card-body py-2 px-3">'
+                 + '<div class="fw-semibold mb-1 small text-secondary">После добавления</div>';
+
+        if (workType && workType.max_hours && hours > workType.max_hours && !workType.is_per_unit) {
+            warnings.push('Превышение норматива вида работы: ' + hours + ' > ' + workType.max_hours + ' ч.');
+        }
+        if (cat && cat.max_hours !== null) {
+            var newCat = getEffectiveCategoryPlanned(categoryCode) + hours;
+            var catOk = newCat <= cat.max_hours;
+            html += '<div class="small">Категория: ' + newCat.toFixed(0) + ' / '
+                  + cat.max_hours.toFixed(0) + ' ч. ' + (catOk ? '✓' : '⚠') + '</div>';
+            if (!catOk) {
+                hasOverload = true;
+                warnings.push('Превышение лимита категории на ' + (newCat - cat.max_hours).toFixed(0) + ' ч.');
+            }
+            // Проверка минимума категории — мягкое предупреждение.
+            if (cat.min_hours !== null && cat.min_hours > 0 && newCat < cat.min_hours) {
+                hasBelowMin = true;
+                belowMinMessages.push('Категория «' + catName + '» всё ещё ниже минимума: '
+                    + newCat.toFixed(0) + ' / ' + cat.min_hours.toFixed(0)
+                    + ' ч. (нужно ещё ' + (cat.min_hours - newCat).toFixed(0) + ' ч.)');
+            }
+        }
+        if (workloadData.max_total_hours > 0) {
+            var newTotal = workloadData.teaching_planned + getEffectiveTasksTotal() + hours;
+            var totalOk = newTotal <= workloadData.max_total_hours;
+            html += '<div class="small">Общая нагрузка: ' + newTotal.toFixed(0) + ' / '
+                  + workloadData.max_total_hours + ' ч. ' + (totalOk ? '✓' : '⚠') + '</div>';
+            if (!totalOk) {
+                hasOverload = true;
+                warnings.push('Превышение общего лимита на ' + (newTotal - workloadData.max_total_hours).toFixed(0) + ' ч.');
+            }
+        }
+        if (warnings.length) {
+            html += '<div class="small text-warning-emphasis mt-1">' + warnings.join('<br>') + '</div>';
+        }
+        if (belowMinMessages.length) {
+            html += '<div class="small text-info-emphasis mt-1">ℹ ' + belowMinMessages.join('<br>ℹ ') + '</div>';
+        }
+        html += '</div>';
+
+        forecastBox.innerHTML = html;
+        // Подсветка: жёлтое — есть overload; голубое — overload нет, но ниже минимума; зелёное — всё ок.
+        forecastBox.classList.toggle('bg-warning-subtle', hasOverload);
+        forecastBox.classList.toggle('bg-info-subtle', !hasOverload && hasBelowMin);
+        forecastBox.classList.toggle('bg-success-subtle', !hasOverload && !hasBelowMin);
+        forecastBox.style.display = '';
+    }
+
+    // ── Слушатели событий ─────────────────────────────────────────────
+
+    categorySelect.addEventListener('change', function () {
+        renderWorkTypeOptions(this.value, null);
+        applyMaxHoursFromWorkType();
+        renderCurrentState();
+        renderForecast();
+    });
+
+    hoursInput.addEventListener('input', renderForecast);
+
+    // ── Первичная инициализация нативного <select> ────────────────────
+
+    if (categorySelect.value) {
+        renderWorkTypeOptions(categorySelect.value, initialWorkTypeId);
+    }
+
+    // ── Tom Select (инициализируется ПОСЛЕ заполнения нативного select) ──
+
+    workTypeTomSelect = new TomSelect(workTypeSelect, {
+        create: false,
+        maxOptions: null,
+        onChange: function () {
+            applyMaxHoursFromWorkType();
+            renderCurrentState();
+            renderForecast();
+        },
+        render: {
+            option: function (data, escape) {
+                return '<div style="white-space:normal;line-height:1.4;padding:6px 8px;">'
+                       + escape(data.text) + '</div>';
+            },
+            item: function (data, escape) {
+                return '<div style="white-space:normal;line-height:1.4;">'
+                       + escape(data.text) + '</div>';
+            },
+        },
+    });
+
+    // ── Отрисовка после инициализации (edit-режим, повтор после ошибки) ─
+
+    applyMaxHoursFromWorkType();
+    renderCurrentState();
+    renderForecast();
+})();
+</script>
+{% endblock %}

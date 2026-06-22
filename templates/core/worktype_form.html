@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if object %}Редактирование вида работы{% else %}Новый вид работы{% endif %}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">
+        {% if object %}
+            Редактирование вида работы
+        {% else %}
+            Новый вид работы
+        {% endif %}
+    </h1>
+    <a href="{% url 'core:worktype_list' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i> К списку
+    </a>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="mb-3">
+                <label class="form-label">{{ form.name.label }} <span class="text-danger">*</span></label>
+                {{ form.name }}
+                {% if form.name.help_text %}
+                    <div class="form-text">{{ form.name.help_text }}</div>
+                {% endif %}
+                {% if form.name.errors %}
+                    <div class="invalid-feedback d-block">{{ form.name.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">{{ form.category.label }} <span class="text-danger">*</span></label>
+                    {{ form.category }}
+                    {% if form.category.errors %}
+                        <div class="invalid-feedback d-block">{{ form.category.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">{{ form.max_hours.label }} <span class="text-danger">*</span></label>
+                    {{ form.max_hours }}
+                    <div class="form-text">{{ form.max_hours.help_text }}</div>
+                    {% if form.max_hours.errors %}
+                        <div class="invalid-feedback d-block">{{ form.max_hours.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">{{ form.unit_description.label }}</label>
+                {{ form.unit_description }}
+                <div class="form-text">{{ form.unit_description.help_text }}</div>
+                {% if form.unit_description.errors %}
+                    <div class="invalid-feedback d-block">{{ form.unit_description.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <div class="form-check mb-4">
+                {{ form.is_active }}
+                <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                    {{ form.is_active.label }}
+                </label>
+                <div class="form-text">Неактивные виды работ не предлагаются при создании задач.</div>
+            </div>
+
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+            {% endif %}
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-vgtu">
+                    <i class="bi bi-check-circle me-1"></i> Сохранить
+                </button>
+                <a href="{% url 'core:worktype_list' %}" class="btn btn-outline-secondary">Отмена</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

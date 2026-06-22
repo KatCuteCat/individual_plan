@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block title %}Норма нагрузки: {{ workload.position }}{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="{% url 'core:workload_list' %}" class="text-decoration-none text-muted">
+        <i class="bi bi-arrow-left me-1"></i>Назад к нормам нагрузки
+    </a>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0">Норма нагрузки</h5>
+            </div>
+            <div class="card-body">
+
+                <!-- Информация о записи -->
+                <div class="mb-4 p-3 bg-light rounded">
+                    <div class="row">
+                        <div class="col-sm-4 text-muted small">Должность</div>
+                        <div class="col-sm-8 fw-semibold">{{ workload.position.name }}</div>
+                    </div>
+                    <div class="row mt-1">
+                        <div class="col-sm-4 text-muted small">Учебный год</div>
+                        <div class="col-sm-8">{{ workload.academic_year.name }}</div>
+                    </div>
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            Макс. учебных часов (полная ставка)
+                        </label>
+                        {{ form.max_teaching_hours }}
+                        <div class="form-text">{{ form.max_teaching_hours.help_text }}</div>
+                        {% if form.max_teaching_hours.errors %}
+                            <div class="text-danger small mt-1">{{ form.max_teaching_hours.errors|join:", " }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">
+                            Общий объём рабочего времени (часов в год)
+                        </label>
+                        {{ form.max_total_hours }}
+                        <div class="form-text">{{ form.max_total_hours.help_text }}</div>
+                        {% if form.max_total_hours.errors %}
+                            <div class="text-danger small mt-1">{{ form.max_total_hours.errors|join:", " }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Справка по ставкам -->
+                    <div class="alert alert-light border small mb-4">
+                        <strong>Справка:</strong> При сохранении система автоматически рассчитает нормы
+                        для совместителей по формуле <code>норма × доля_ставки</code>.
+                        Допустимое отклонение: до 5 ч. (ставка ≤ 0.5) или до 10 ч. (ставка &gt; 0.5).
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">Сохранить</button>
+                        <a href="{% url 'core:workload_list' %}" class="btn btn-outline-secondary">Отмена</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

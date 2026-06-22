@@ -1,0 +1,202 @@
+{% extends 'base.html' %}
+
+{% block title %}Настройки выгрузки{% endblock %}
+
+{% block page_header %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">
+        <i class="bi bi-file-earmark-word me-2"></i>Настройки выгрузки
+    </h4>
+    <a href="{% url 'core:admin_dashboard' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>На главную
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+
+        <div class="alert alert-light border mb-3">
+            <i class="bi bi-info-circle me-1"></i>
+            Эти данные используются при генерации индивидуального плана в Word.
+            Все поля необязательны — если оставить пустым, в документе будет плейсхолдер.
+            <br>
+            <strong>Учебный год:</strong> {{ active_year.name }}
+        </div>
+
+        <div class="card card-vgtu">
+            <div class="card-header">
+                <strong>Общие реквизиты для всех планов</strong>
+            </div>
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <!-- Кафедра и факультет -->
+                    <h6 class="text-muted mb-3">
+                        <i class="bi bi-building me-1"></i>Подразделение
+                    </h6>
+                    <div class="mb-3">
+                        <label for="id_department_name" class="form-label">Аббревиатура названия кафедры</label>
+                        {{ form.department_name }}
+                        {% if form.department_name.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.department_name.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">Используется на последней странице документа (подпись заведующего)</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_department_full_name" class="form-label">Полное название кафедры</label>
+                        {{ form.department_full_name }}
+                        {% if form.department_full_name.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.department_full_name.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">В родительном падеже. Выводится в шапке: «Кафедра ...»</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_faculty_name" class="form-label">Название факультета</label>
+                        {{ form.faculty_name }}
+                        {% if form.faculty_name.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.faculty_name.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <hr>
+
+                    <!-- Утверждающий -->
+                    <h6 class="text-muted mb-3">
+                        <i class="bi bi-pen me-1"></i>Утверждение (блок «УТВЕРЖДАЮ»)
+                    </h6>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="id_approver_title" class="form-label">Должность</label>
+                            {{ form.approver_title }}
+                            {% if form.approver_title.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.approver_title.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_approver_name" class="form-label">ФИО</label>
+                            {{ form.approver_name }}
+                            {% if form.approver_name.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.approver_name.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">В формате: И.О. Фамилия</div>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- Заведующий -->
+                    <h6 class="text-muted mb-3">
+                        <i class="bi bi-person-check me-1"></i>Заведующий кафедрой
+                    </h6>
+                    <div class="mb-3">
+                        <label for="id_head_name" class="form-label">ФИО заведующего</label>
+                        {{ form.head_name }}
+                        {% if form.head_name.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.head_name.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">В формате: И.О. Фамилия. Для подписи внизу документа</div>
+                    </div>
+
+                    <hr>
+
+                    <!-- Протокол (план) -->
+                    <h6 class="text-muted mb-3">
+                        <i class="bi bi-journal-text me-1"></i>Протокол заседания кафедры (план)
+                    </h6>
+                    <p class="text-muted small mb-2">
+                        Дата ставится на стр. 2 документа — подписи утверждения плана.
+                    </p>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="id_protocol_number" class="form-label">Номер протокола</label>
+                            {{ form.protocol_number }}
+                            {% if form.protocol_number.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.protocol_number.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_protocol_date" class="form-label">Дата протокола</label>
+                            {{ form.protocol_date }}
+                            {% if form.protocol_date.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.protocol_date.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="form-text mb-3">
+                        Если номер и дата не заполнены — в документе будет
+                        «протокол № ___ от «__» ________ 20__ г.»
+                    </div>
+
+                    <hr>
+                    <!-- Протокол (отчёт) -->
+                    <h6 class="text-muted mb-3">
+                        <i class="bi bi-journal-check me-1"></i>Протокол заседания кафедры (отчёт)
+                    </h6>
+                    <p class="text-muted small mb-2">
+                        Дата ставится на последней странице — подписи отчёта.
+                    </p>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="id_report_protocol_number" class="form-label">Номер протокола (отчёт)</label>
+                            {{ form.report_protocol_number }}
+                            {% if form.report_protocol_number.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.report_protocol_number.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_report_protocol_date" class="form-label">Дата протокола (отчёт)</label>
+                            {{ form.report_protocol_date }}
+                            {% if form.report_protocol_date.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.report_protocol_date.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="form-text mb-3">
+                        Если не заполнены — на последней странице будут плейсхолдеры.
+                    </div>
+
+                    <hr>
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'core:admin_dashboard' %}" class="btn btn-outline-secondary">
+                            Отмена
+                        </a>
+                        <button type="submit" class="btn btn-vgtu">
+                            <i class="bi bi-check-lg me-1"></i>Сохранить
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

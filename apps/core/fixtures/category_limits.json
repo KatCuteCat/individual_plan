@@ -1,0 +1,50 @@
+[
+  {
+    "model": "core.categorylimit",
+    "pk": 1,
+    "fields": {
+      "category": 2,
+      "position": null,
+      "min_percent": "10.00",
+      "max_percent": "80.00",
+      "regulation_point": "4.1, абз. 1",
+      "notes": "Учебно-методическая работа не должна составлять более 80 % и менее 10 % от объёма работы второй половины дня."
+    }
+  },
+  {
+    "model": "core.categorylimit",
+    "pk": 2,
+    "fields": {
+      "category": 3,
+      "position": null,
+      "min_percent": "10.00",
+      "max_percent": "80.00",
+      "regulation_point": "4.1, абз. 2",
+      "notes": "Научно-исследовательская работа не должна составлять более 80 % и менее 10 % от объёма работы второй половины дня."
+    }
+  },
+  {
+    "model": "core.categorylimit",
+    "pk": 3,
+    "fields": {
+      "category": 4,
+      "position": null,
+      "min_percent": "0.00",
+      "max_percent": "80.00",
+      "regulation_point": "4.1, абз. 3",
+      "notes": "Организационно-методическая работа не должна составлять более 80 % от объёма работы второй половины дня. Минимум приказом не установлен."
+    }
+  },
+  {
+    "model": "core.categorylimit",
+    "pk": 4,
+    "fields": {
+      "category": 5,
+      "position": null,
+      "min_percent": "0.00",
+      "max_percent": "80.00",
+      "regulation_point": "4.1, абз. 4",
+      "notes": "Воспитательная работа не должна составлять более 80 % от объёма работы второй половины дня. Минимум приказом не установлен."
+    }
+  }
+]

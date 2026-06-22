@@ -1,0 +1,15 @@
+{% comment %}
+_task_hours_cell.html — ожидает переменную task. Подсветка превышения
+норматива вида работы: жёлтый бейдж только для is_per_unit=False.
+{% endcomment %}
+{% if task.work_type and not task.work_type.is_per_unit and task.planned_hours > task.work_type.max_hours %}
+    <span class="badge bg-warning text-dark"
+          title="Норматив{% if task.work_type.unit_description %} {{ task.work_type.unit_description }}{% else %} в год{% endif %}: до {{ task.work_type.max_hours }} ч.">
+        <i class="bi bi-exclamation-triangle me-1"></i>{{ task.planned_hours|floatformat:0 }} / {{ task.work_type.max_hours }} ч.
+    </span>
+{% else %}
+    {{ task.planned_hours|floatformat:0 }} ч.
+{% endif %}
+{% if task.actual_hours %}
+    <br><span class="text-success">факт: {{ task.actual_hours|floatformat:0 }}</span>
+{% endif %}

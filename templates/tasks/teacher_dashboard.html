@@ -1,0 +1,268 @@
+{% extends 'base.html' %}
+
+{% block title %}Главная{% endblock %}
+
+{% block page_header %}
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+    <div>
+        <h4 class="mb-0">
+            <i class="bi bi-speedometer2 me-2"></i>Главная
+        </h4>
+        {% if active_year %}
+            <span class="text-muted small">Учебный год: {{ active_year.name }}</span>
+        {% endif %}
+    </div>
+    {# Кнопка «Создать задачу» — только если есть подходящая позиция (не почасовая) #}
+    {% if primary_position and not primary_position.is_hourly and not primary_position.academic_year.is_archived %}
+    <a href="{% url 'tasks:my_task_create' %}" class="btn btn-primary btn-sm">
+        <i class="bi bi-plus-circle me-1"></i>Создать задачу
+    </a>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block content %}
+
+{% if not active_year %}
+<div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle me-2"></i>
+    Нет активного учебного года. Обратитесь к администратору.
+</div>
+{% else %}
+
+{# === Карточки-счётчики === #}
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="card shadow-sm text-center h-100">
+            <div class="card-body py-3">
+                <div class="fs-3 fw-bold text-primary">{{ count_total }}</div>
+                <div class="text-muted small">Всего задач</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="card shadow-sm text-center h-100">
+            <div class="card-body py-3">
+                <div class="fs-3 fw-bold text-secondary">{{ count_assigned }}</div>
+                <div class="text-muted small">Назначено</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="card shadow-sm text-center h-100">
+            <div class="card-body py-3">
+                <div class="fs-3 fw-bold text-info">{{ count_in_progress }}</div>
+                <div class="text-muted small">В работе</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="card shadow-sm text-center h-100">
+            <div class="card-body py-3">
+                <div class="fs-3 fw-bold text-warning">{{ count_completed }}</div>
+                <div class="text-muted small">На проверке</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-2">
+        <div class="card shadow-sm text-center h-100">
+            <div class="card-body py-3">
+                <div class="fs-3 fw-bold text-success">{{ count_approved }}</div>
+                <div class="text-muted small">Подтверждено</div>
+            </div>
+        </div>
+    </div>
+    {% if count_pending_approval > 0 %}
+    <div class="col-6 col-md-4 col-xl-2">
+        <a href="{% url 'tasks:my_tasks' %}?status=pending_approval"
+           class="card shadow-sm text-center h-100 text-decoration-none border-warning">
+            <div class="card-body py-3">
+                <div class="fs-3 fw-bold text-warning">{{ count_pending_approval }}</div>
+                <div class="text-muted small">
+                    <i class="bi bi-hourglass-split me-1"></i>На утверждении
+                </div>
+            </div>
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+{# === Прогресс нагрузки === #}
+{% if stats %}
+<div class="card shadow-sm mb-4">
+    <div class="card-header fw-semibold">
+        <i class="bi bi-clock-history me-1"></i> Моя нагрузка
+    </div>
+    <div class="card-body">
+        {# Общая нагрузка #}
+        <div class="mb-3">
+            <div class="d-flex justify-content-between mb-1">
+                <span class="small fw-semibold">Общая нагрузка (плановые часы)</span>
+                <span class="small {% if stats.is_overloaded %}text-danger fw-bold{% endif %}">
+                    {{ stats.total_planned|floatformat:0 }}
+                    {% if stats.max_total_hours > 0 %}
+                        / {{ stats.max_total_hours }} ч.
+                    {% else %}
+                        ч. (норма не задана)
+                    {% endif %}
+                </span>
+            </div>
+            {% if stats.max_total_hours > 0 %}
+                {% widthratio stats.total_planned stats.max_total_hours 100 as pct %}
+                <div class="progress" style="height: 12px;">
+                    <div class="progress-bar
+                        {% if stats.is_overloaded %}bg-danger
+                        {% elif pct|add:0 >= 90 %}bg-warning
+                        {% else %}bg-primary{% endif %}"
+                        style="width: {% if pct > 100 %}100{% else %}{{ pct }}{% endif %}%">
+                        {% if pct >= 15 %}{{ pct }}%{% endif %}
+                    </div>
+                </div>
+                {% if stats.is_overloaded %}
+                <div class="text-danger small mt-1">
+                    <i class="bi bi-exclamation-triangle me-1"></i>
+                    Превышена норма нагрузки!
+                </div>
+                {% endif %}
+            {% endif %}
+        </div>
+
+        {# Фактические часы #}
+        {% if stats.total_actual > 0 %}
+        <div class="mb-2">
+            <div class="d-flex justify-content-between mb-1">
+                <span class="small">Фактически выполнено</span>
+                <span class="small text-success">
+                    {{ stats.total_actual|floatformat:0 }} / {{ stats.total_planned|floatformat:0 }} ч.
+                </span>
+            </div>
+            {% if stats.total_planned > 0 %}
+                {% widthratio stats.total_actual stats.total_planned 100 as fact_pct %}
+                <div class="progress" style="height: 8px;">
+                    <div class="progress-bar bg-success"
+                         style="width: {% if fact_pct > 100 %}100{% else %}{{ fact_pct }}{% endif %}%">
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <div class="text-end mt-2">
+            <a href="{% url 'tasks:my_workload' %}" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-bar-chart me-1"></i>Подробнее
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row g-3">
+    {# === Ожидают утверждения заведующим (внеплановые) === #}
+    {% if pending_approval_tasks %}
+    <div class="col-lg-6">
+        <div class="card shadow-sm border-warning h-100">
+            <div class="card-header bg-warning bg-opacity-10 fw-semibold text-warning-emphasis">
+                <i class="bi bi-hourglass-split me-1"></i>
+                Ожидают утверждения
+                <span class="badge bg-warning text-dark ms-1">{{ count_pending_approval }}</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover table-sm mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Задача</th>
+                                <th>Категория</th>
+                                <th class="text-center">Часы</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for task in pending_approval_tasks %}
+                            <tr>
+                                <td class="small fw-semibold">{{ task.title }}</td>
+                                <td class="small text-muted">{{ task.category.name }}</td>
+                                <td class="text-center small">{{ task.planned_hours|floatformat:0 }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer text-end bg-transparent">
+                <a href="{% url 'tasks:my_tasks' %}?status=pending_approval"
+                   class="btn btn-sm btn-outline-warning">
+                    Все ожидающие утверждения
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {# === Ближайшие дедлайны === #}
+    <div class="{% if pending_approval_tasks %}col-lg-6{% else %}col-12{% endif %}">
+        <div class="card shadow-sm h-100">
+            <div class="card-header fw-semibold">
+                <i class="bi bi-calendar-event me-1"></i>
+                Ближайшие задачи
+                {% if count_overdue > 0 %}
+                    <span class="badge bg-danger ms-1">{{ count_overdue }} просрочено</span>
+                {% endif %}
+            </div>
+            <div class="card-body p-0">
+                {% if upcoming_tasks %}
+                <div class="table-responsive">
+                    <table class="table table-hover table-sm mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Задача</th>
+                                <th>Категория</th>
+                                <th class="text-center">Часы</th>
+                                <th>Срок</th>
+                                <th>Статус</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for task in upcoming_tasks %}
+                            <tr class="{% if task.end_date < today %}table-danger{% endif %}">
+                                <td class="small fw-semibold">{{ task.title }}</td>
+                                <td class="small text-muted">{{ task.category.name }}</td>
+                                <td class="text-center small">{{ task.planned_hours|floatformat:0 }}</td>
+                                <td class="small text-nowrap
+                                    {% if task.end_date < today %}text-danger fw-bold{% endif %}">
+                                    {{ task.end_date|date:"d.m.Y" }}
+                                    {% if task.end_date < today %}
+                                        <i class="bi bi-exclamation-triangle"></i>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if task.status == 'assigned' %}
+                                        <span class="badge bg-secondary">Назначена</span>
+                                    {% elif task.status == 'in_progress' %}
+                                        <span class="badge bg-info text-dark">В работе</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center text-muted py-4">
+                    <i class="bi bi-check-circle fs-2 d-block mb-2"></i>
+                    Нет задач, требующих выполнения.
+                </div>
+                {% endif %}
+            </div>
+            <div class="card-footer text-end bg-transparent">
+                <a href="{% url 'tasks:my_tasks' %}"
+                   class="btn btn-sm btn-outline-primary">
+                    Все мои задачи
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endif %}
+
+{% endblock %}
